@@ -1,24 +1,163 @@
 package com.reactnativemonriandroidios
 
-import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContextBaseJavaModule
-import com.facebook.react.bridge.ReactMethod
-import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.*
+import com.monri.android.Monri
+import com.monri.android.ResultCallback
+import com.monri.android.model.*
 
-class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
-    override fun getName(): String {
-        return "MonriAndroidIos"
+class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext), ResultCallback<PaymentResult> {
+
+  private lateinit var monri: Monri
+  private lateinit var monriActivityListeners: MonriActivityEventListener
+  private lateinit var confirmPaymentPromise: Promise
+
+  override fun getName(): String {
+    return "MonriAndroidIos"
+  }
+
+  @ReactMethod
+  fun confirmPayment(monriApiOptions: ReadableMap, params: ReadableMap, promise: Promise) {
+
+    val options = parseMonriApiOptions(monriApiOptions)
+    val confirmPaymentParams = parseConfirmPaymentParams(params)
+
+    if (this::monri.isInitialized.not()) {
+      this.monri = Monri(reactApplicationContext, options)
+      this.monriActivityListeners = MonriActivityEventListener(monri, this)
+      this.confirmPaymentPromise = promise
+      reactApplicationContext.addActivityEventListener(monriActivityListeners)
     }
 
-    // Example method
-    // See https://facebook.github.io/react-native/docs/native-modules-android
-    @ReactMethod
-    fun multiply(a: Int, b: Int, promise: Promise) {
-    
-      promise.resolve(a * b)
-    
-    }
+    monri.confirmPayment(reactApplicationContext.currentActivity,
+      confirmPaymentParams
+    )
 
-    
+  }
+
+  private fun parseConfirmPaymentParams(params: ReadableMap): ConfirmPaymentParams {
+    val clientSecret = getRequiredString(params, "clientSecret")
+    val transactionParams = params.getMap("transaction")
+      ?: throw RequiredAttributeException("params.transaction is missing")
+
+    val cardParams = (if (params.hasKey("card")) {
+      params.getMap("card") ?: throw RequiredAttributeException("params.card is missing")
+    } else {
+      throw RequiredAttributeException("params.card is missing")
+    })
+
+    val customerParams = CustomerParams()
+      .setAddress(getNullableString(transactionParams, "address"))
+      .setFullName(getNullableString(transactionParams, "fullName"))
+      .setCity(getNullableString(transactionParams, "city"))
+      .setZip(getNullableString(transactionParams, "zip"))
+      .setPhone(getNullableString(transactionParams, "phone"))
+      .setCountry(getNullableString(transactionParams, "country"))
+      .setEmail(getNullableString(transactionParams, "email"))
+    val card = Card(getRequiredString(cardParams, "pan"), getRequiredInt(cardParams, "expiryMonth"), getRequiredInt(cardParams, "expiryYear"), getRequiredString(cardParams, "cvv"))
+    return ConfirmPaymentParams.create(
+      clientSecret,
+      card.toPaymentMethodParams(),
+      TransactionParams.create()
+        .set(customerParams)
+        .set("order_info", transactionParams.getString("orderInfo"))
+    )
+
+  }
+
+  private fun parseMonriApiOptions(params: ReadableMap): MonriApiOptions {
+    return MonriApiOptions(
+      getRequiredString(params, "authenticityToken"),
+      if (params.hasKey("developmentMode")) {
+        params.getBoolean("developmentMode")
+      } else {
+        false
+      }
+    )
+  }
+
+  private fun getRequiredString(params: ReadableMap,
+                                key: String,
+                                defaultValue: String? = null
+  ): String {
+
+    return (if (params.hasKey(key)) {
+      params.getString(key)
+    } else {
+      defaultValue
+    }) ?: throw RequiredAttributeException("Missing attribute $key")
+  }
+
+  private fun getRequiredInt(params: ReadableMap,
+                             key: String,
+                             defaultValue: Int? = null
+  ): Int {
+
+    return (if (params.hasKey(key)) {
+      params.getInt(key)
+    } else {
+      defaultValue
+    }) ?: throw RequiredAttributeException("Missing attribute $key")
+  }
+
+  private fun getNullableString(params: ReadableMap,
+                                key: String,
+                                defaultValue: String? = null
+  ): String? {
+
+    return (if (params.hasKey(key)) {
+      params.getString(key)
+    } else {
+      defaultValue
+    })
+  }
+
+
+  override fun onSuccess(paymentResult: PaymentResult) {
+
+    if (this::confirmPaymentPromise.isInitialized) {
+      val result = WritableNativeMap()
+
+      result.putValueOrNull("status", paymentResult.status)
+      result.putValueOrNull("currency", paymentResult.currency)
+      result.putValueOrNull("amount", paymentResult.amount)
+      result.putValueOrNull("orderNumber", paymentResult.orderNumber)
+      result.putValueOrNull("panToken", paymentResult.panToken)
+      result.putValueOrNull("createdAt", paymentResult.createdAt)
+      result.putValueOrNull("transactionType", paymentResult.transactionType)
+      result.putArray("errors", WritableNativeArray())
+
+      // TODO: add payment method support
+
+      confirmPaymentPromise.resolve(result)
+    }
+  }
+
+  override fun onError(throwable: Throwable?) {
+    if (this::confirmPaymentPromise.isInitialized) {
+      this.confirmPaymentPromise.reject(throwable)
+    }
+  }
+
+
+}
+
+private class RequiredAttributeException(message: String) : IllegalArgumentException(message) {
+
+}
+
+private fun WritableNativeMap.putValueOrNull(key: String, value: Int?) {
+  if (value == null) {
+    this.putNull(key)
+  } else {
+    this.putInt(key, value)
+  }
+}
+
+private fun WritableNativeMap.putValueOrNull(key: String, value: String?) {
+  if (value == null) {
+    this.putNull(key)
+  } else {
+    this.putString(key, value)
+  }
 }
