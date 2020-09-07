@@ -27,6 +27,7 @@ export type Card = {
   cvv: string;
   expiryYear: number;
   expiryMonth: number;
+  saveCard?: boolean;
 };
 
 export type Transaction = {

@@ -28,6 +28,7 @@ export default function App() {
               cvv: '123',
               expiryMonth: 12,
               expiryYear: 2020,
+              saveCard: true
             },
             transaction: {
               email: 'jasmin.suljich@gmail.com',
@@ -44,7 +45,7 @@ export default function App() {
       })
       .then(
         (r) =>
-          `${r.status}, amount = ${r.amount}, created_at = ${r.createdAt}, order_number = ${r.orderNumber}`
+          `${r.status}, amount = ${r.amount}, created_at = ${r.createdAt}, order_number = ${r.orderNumber}, token = ${r.panToken}, saveCard = ${JSON.stringify(r.paymentMethod)}`
       )
       .then(setResult)
       .catch((e) => {

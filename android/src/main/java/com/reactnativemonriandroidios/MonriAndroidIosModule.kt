@@ -55,6 +55,13 @@ class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContex
       .setCountry(getNullableString(transactionParams, "country"))
       .setEmail(getNullableString(transactionParams, "email"))
     val card = Card(getRequiredString(cardParams, "pan"), getRequiredInt(cardParams, "expiryMonth"), getRequiredInt(cardParams, "expiryYear"), getRequiredString(cardParams, "cvv"))
+
+    card.isTokenizePan = if (cardParams.hasKey("saveCard")) {
+      cardParams.getBoolean("saveCard")
+    } else {
+      false
+    }
+
     return ConfirmPaymentParams.create(
       clientSecret,
       card.toPaymentMethodParams(),
@@ -125,7 +132,41 @@ class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContex
       result.putValueOrNull("panToken", paymentResult.panToken)
       result.putValueOrNull("createdAt", paymentResult.createdAt)
       result.putValueOrNull("transactionType", paymentResult.transactionType)
-      result.putArray("errors", WritableNativeArray())
+
+      if (paymentResult.paymentMethod != null) {
+        val savedCard = paymentResult.paymentMethod as SavedCardPaymentMethod
+        val paymentMethod = WritableNativeMap()
+        val paymentMethodData = WritableNativeMap()
+        paymentMethod.putValueOrNull("type", savedCard.type)
+
+
+        paymentMethodData.putValueOrNull("brand", savedCard.data!!.brand)
+        paymentMethodData.putValueOrNull("expirationDate", savedCard.data!!.expirationDate)
+        paymentMethodData.putValueOrNull("issuer", savedCard.data!!.issuer)
+        paymentMethodData.putValueOrNull("masked", savedCard.data!!.masked)
+        paymentMethodData.putValueOrNull("token", savedCard.data!!.token)
+
+        paymentMethod.putMap("data", paymentMethodData)
+
+        result.putMap("paymentMethod", paymentMethod)
+
+      }
+
+      if (paymentResult.panToken != null) {
+        result.putValueOrNull("panToken", paymentResult.panToken)
+      }
+
+      if (paymentResult.errors != null) {
+        val errors = WritableNativeArray()
+        paymentResult.errors!!.forEach { err ->
+          errors.pushString(err)
+        }
+
+        result.putArray("errors", errors)
+      } else {
+        result.putArray("errors", WritableNativeArray())
+      }
+
 
       // TODO: add payment method support
 
