@@ -22,12 +22,11 @@ class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContex
     val options = parseMonriApiOptions(monriApiOptions)
     val confirmPaymentParams = parseConfirmPaymentParams(params)
 
-    if (this::monri.isInitialized.not()) {
-      this.monri = Monri(reactApplicationContext, options)
-      this.monriActivityListeners = MonriActivityEventListener(monri, this)
-      this.confirmPaymentPromise = promise
-      reactApplicationContext.addActivityEventListener(monriActivityListeners)
-    }
+    this.monri = Monri(reactApplicationContext, options)
+    this.monriActivityListeners = MonriActivityEventListener(monri, this)
+    this.confirmPaymentPromise = promise
+
+    reactApplicationContext.addActivityEventListener(monriActivityListeners)
 
     monri.confirmPayment(reactApplicationContext.currentActivity,
       confirmPaymentParams
@@ -122,6 +121,10 @@ class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContex
 
   override fun onSuccess(paymentResult: PaymentResult) {
 
+    if (this::monriActivityListeners.isInitialized) {
+      this.reactApplicationContext.removeActivityEventListener(monriActivityListeners)
+    }
+
     if (this::confirmPaymentPromise.isInitialized) {
       val result = WritableNativeMap()
 
@@ -175,6 +178,9 @@ class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContex
   }
 
   override fun onError(throwable: Throwable?) {
+    if (this::monriActivityListeners.isInitialized) {
+      this.reactApplicationContext.removeActivityEventListener(monriActivityListeners)
+    }
     if (this::confirmPaymentPromise.isInitialized) {
       this.confirmPaymentPromise.reject(throwable)
     }
