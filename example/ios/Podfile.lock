@@ -1,5 +1,7 @@
 PODS:
+  - Alamofire (4.9.1)
   - boost-for-react-native (1.63.0)
+  - Caishen (2.2.1)
   - CocoaAsyncSocket (7.6.4)
   - CocoaLibEvent (1.0.0)
   - DoubleConversion (1.1.6)
@@ -67,6 +69,9 @@ PODS:
     - DoubleConversion
     - glog
   - glog (0.3.5)
+  - Monri (1.1.5-dev):
+    - Alamofire (~> 4.0)
+    - Caishen
   - OpenSSL-Universal (1.0.2.19):
     - OpenSSL-Universal/Static (= 1.0.2.19)
   - OpenSSL-Universal/Static (1.0.2.19)
@@ -233,7 +238,8 @@ PODS:
     - React-cxxreact (= 0.62.2)
     - React-jsi (= 0.62.2)
   - React-jsinspector (0.62.2)
-  - react-native-monri-android-ios (0.1.0):
+  - react-native-monri-android-ios (0.1.3):
+    - Monri (= 1.1.5-dev)
     - React
   - React-RCTActionSheet (0.62.2):
     - React-Core/RCTActionSheetHeaders (= 0.62.2)
@@ -336,7 +342,9 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - Alamofire
     - boost-for-react-native
+    - Caishen
     - CocoaAsyncSocket
     - CocoaLibEvent
     - Flipper
@@ -346,6 +354,7 @@ SPEC REPOS:
     - Flipper-PeerTalk
     - Flipper-RSocket
     - FlipperKit
+    - Monri
     - OpenSSL-Universal
     - YogaKit
 
@@ -404,7 +413,9 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
+  Alamofire: 85e8a02c69d6020a0d734f6054870d7ecb75cf18
   boost-for-react-native: 39c7adb57c4e60d6c5479dd8623128eb5b3f0f2c
+  Caishen: 903d1d567b010b28217acd38e438b5917623cfef
   CocoaAsyncSocket: 694058e7c0ed05a9e217d1b3c7ded962f4180845
   CocoaLibEvent: 2fab71b8bd46dd33ddb959f7928ec5909f838e3f
   DoubleConversion: 5805e889d232975c086db112ece9ed034df7a0b2
@@ -419,6 +430,7 @@ SPEC CHECKSUMS:
   FlipperKit: 6dc9b8f4ef60d9e5ded7f0264db299c91f18832e
   Folly: 30e7936e1c45c08d884aa59369ed951a8e68cf51
   glog: 1f3da668190260b06b429bb211bfbee5cd790c28
+  Monri: f6ffedff3dead9dda457640a8b059de559048d5e
   OpenSSL-Universal: 8b48cc0d10c1b2923617dfe5c178aa9ed2689355
   RCTRequired: cec6a34b3ac8a9915c37e7e4ad3aa74726ce4035
   RCTTypeSafety: 93006131180074cffa227a1075802c89a49dd4ce
@@ -429,7 +441,7 @@ SPEC CHECKSUMS:
   React-jsi: b6dc94a6a12ff98e8877287a0b7620d365201161
   React-jsiexecutor: 1540d1c01bb493ae3124ed83351b1b6a155db7da
   React-jsinspector: 512e560d0e985d0e8c479a54a4e5c147a9c83493
-  react-native-monri-android-ios: 92d4b161a8c487d500538e2f783bde74ff68e384
+  react-native-monri-android-ios: 1fc9ab257ac31ec56180d0e1f1b60393d71b9465
   React-RCTActionSheet: f41ea8a811aac770e0cc6e0ad6b270c644ea8b7c
   React-RCTAnimation: 49ab98b1c1ff4445148b72a3d61554138565bad0
   React-RCTBlob: a332773f0ebc413a0ce85942a55b064471587a71
@@ -443,6 +455,6 @@ SPEC CHECKSUMS:
   Yoga: 3ebccbdd559724312790e7742142d062476b698e
   YogaKit: f782866e155069a2cca2517aafea43200b01fd5a
 
-PODFILE CHECKSUM: b70d3bf14d88e42a2ffe4a6f59b5d5fe69affad8
+PODFILE CHECKSUM: fbd372c78fbe3c2f7dbe5a0fff6a6c6f2024e501
 
 COCOAPODS: 1.9.1

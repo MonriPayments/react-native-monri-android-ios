@@ -1,11 +1,11 @@
 import * as React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Text, Button } from 'react-native';
 import MonriAndroidIos from 'react-native-monri-android-ios';
 
 export default function App() {
   const [result, setResult] = React.useState<string | undefined>();
 
-  React.useEffect(() => {
+  function onPressLearnMore() {
     fetch('https://mobile.webteh.hr/example/create-payment-session', {
       method: 'POST',
       headers: {
@@ -16,6 +16,7 @@ export default function App() {
     })
       .then((v) => v.json())
       .then((json) => {
+        // return MonriAndroidIos.multiply(1, 2);
         return MonriAndroidIos.confirmPayment(
           {
             authenticityToken: '6a13d79bde8da9320e88923cb3472fb638619ccb',
@@ -45,17 +46,25 @@ export default function App() {
       })
       .then(
         (r) =>
-          `${r.status}, amount = ${r.amount}, created_at = ${r.createdAt}, order_number = ${r.orderNumber}, token = ${r.panToken}, saveCard = ${JSON.stringify(r.paymentMethod)}`
+          `${JSON.stringify(r)}`
       )
       .then(setResult)
       .catch((e) => {
-        setResult(e);
+        setResult(`${e}`);
       });
-  }, []);
+  }
 
   return (
     <View style={styles.container}>
+
       <Text>Result: {result}</Text>
+
+      <Button
+  onPress={onPressLearnMore}
+  title="Start payment"
+  color="#841584"
+  accessibilityLabel="Learn more about this purple button"
+/>
     </View>
   );
 }

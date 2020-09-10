@@ -4,6 +4,7 @@ import com.facebook.react.bridge.*
 import com.monri.android.Monri
 import com.monri.android.ResultCallback
 import com.monri.android.model.*
+import java.lang.Exception
 
 
 class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext), ResultCallback<PaymentResult> {
@@ -19,18 +20,22 @@ class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContex
   @ReactMethod
   fun confirmPayment(monriApiOptions: ReadableMap, params: ReadableMap, promise: Promise) {
 
-    val options = parseMonriApiOptions(monriApiOptions)
-    val confirmPaymentParams = parseConfirmPaymentParams(params)
+    try {
+      val options = parseMonriApiOptions(monriApiOptions)
+      val confirmPaymentParams = parseConfirmPaymentParams(params)
 
-    this.monri = Monri(reactApplicationContext, options)
-    this.monriActivityListeners = MonriActivityEventListener(monri, this)
-    this.confirmPaymentPromise = promise
+      this.monri = Monri(reactApplicationContext, options)
+      this.monriActivityListeners = MonriActivityEventListener(monri, this)
+      this.confirmPaymentPromise = promise
 
-    reactApplicationContext.addActivityEventListener(monriActivityListeners)
+      reactApplicationContext.addActivityEventListener(monriActivityListeners)
 
-    monri.confirmPayment(reactApplicationContext.currentActivity,
-      confirmPaymentParams
-    )
+      monri.confirmPayment(reactApplicationContext.currentActivity,
+        confirmPaymentParams
+      )
+    } catch (e: Exception) {
+      promise.reject(e)
+    }
 
   }
 

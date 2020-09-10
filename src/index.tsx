@@ -12,14 +12,14 @@ export type SavedPaymentMethod = {
 
 export type PaymentResult = {
   status: string;
-  currency: string;
-  amount: number;
-  orderNumber: string;
+  currency?: string;
+  amount?: number;
+  orderNumber?: string;
   panToken?: string;
-  createdAt: string;
-  transactionType: string;
+  createdAt?: string;
+  transactionType?: string;
   paymentMethod?: SavedPaymentMethod;
-  errors: [String];
+  errors?: [String];
 };
 
 export type Card = {
@@ -41,9 +41,15 @@ export type Transaction = {
   orderInfo?: string;
 };
 
+export type SavedCard = {
+  panToken: string,
+  cvv: string
+}
+
 export type ConfirmPaymentParams = {
   clientSecret: string;
-  card: Card;
+  card?: Card;
+  savedCard?: SavedCard;
   transaction: Transaction;
 };
 
