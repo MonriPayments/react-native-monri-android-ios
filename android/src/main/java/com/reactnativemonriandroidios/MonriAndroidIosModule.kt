@@ -44,10 +44,17 @@ class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContex
     val transactionParams = params.getMap("transaction")
       ?: throw RequiredAttributeException("params.transaction is missing")
 
-    val cardParams = (if (params.hasKey("card")) {
-      params.getMap("card") ?: throw RequiredAttributeException("params.card is missing")
-    } else {
-      throw RequiredAttributeException("params.card is missing")
+    val paymentMethodParams = (when {
+      params.hasKey("card") -> {
+        params.getMap("card") ?: throw RequiredAttributeException("params.card is missing")
+      }
+      params.hasKey("savedCard") -> {
+        params.getMap("savedCard")
+          ?: throw RequiredAttributeException("params.savedCard is missing")
+      }
+      else -> {
+        throw RequiredAttributeException("params.card or params.savedCard is missing")
+      }
     })
 
     val customerParams = CustomerParams()
@@ -58,17 +65,29 @@ class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContex
       .setPhone(getNullableString(transactionParams, "phone"))
       .setCountry(getNullableString(transactionParams, "country"))
       .setEmail(getNullableString(transactionParams, "email"))
-    val card = Card(getRequiredString(cardParams, "pan"), getRequiredInt(cardParams, "expiryMonth"), getRequiredInt(cardParams, "expiryYear"), getRequiredString(cardParams, "cvv"))
 
-    card.isTokenizePan = if (cardParams.hasKey("saveCard")) {
-      cardParams.getBoolean("saveCard")
-    } else {
-      false
+    val paymentMethod: PaymentMethodParams = when {
+      params.hasKey("savedCard") -> {
+        SavedCard(getRequiredString(paymentMethodParams, "panToken"), getRequiredString(paymentMethodParams, "cvv")).toPaymentMethodParams()
+      }
+      params.hasKey("card") -> {
+        val card = Card(getRequiredString(paymentMethodParams, "pan"), getRequiredInt(paymentMethodParams, "expiryMonth"), getRequiredInt(paymentMethodParams, "expiryYear"), getRequiredString(paymentMethodParams, "cvv"))
+
+        card.isTokenizePan = if (paymentMethodParams.hasKey("saveCard")) {
+          paymentMethodParams.getBoolean("saveCard")
+        } else {
+          false
+        }
+        card.toPaymentMethodParams()
+      }
+      else -> {
+        throw RequiredAttributeException("params.card or params.savedCard is missing")
+      }
     }
 
     return ConfirmPaymentParams.create(
       clientSecret,
-      card.toPaymentMethodParams(),
+      paymentMethod,
       TransactionParams.create()
         .set(customerParams)
         .set("order_info", transactionParams.getString("orderInfo"))
