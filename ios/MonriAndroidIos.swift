@@ -132,13 +132,13 @@ class MonriAndroidIos: NSObject {
                     expYear: try requiredIntAttribute(card, "expiryYear", "params.card.expiryYear"),
                     tokenizePan: (card["saveCard"] as? Bool) ?? false
                     ).toPaymentMethodParams()
-        } else if (type == "saved_card") {
+        } else if (type == "savedCard") {
             paymentMethod = SavedCard(
                     panToken: try requiredStringAttribute(card, "pan", "params.savedCard.panToken"),
                     cvc: try requiredStringAttribute(card, "pan", "params.savedCard.cvc"))
                     .toPaymentMethodParams()
         } else {
-            throw MonriAndroidIosConfirmPaymentError.configurationError("Got unsupported type \(type), expected one of = card, saved_card")
+            throw MonriAndroidIosConfirmPaymentError.configurationError("Got unsupported type \(type), expected one of = card, savedCard")
         }
 
         let customerParams = CustomerParams(email: getString(transactionParams, "email"),
