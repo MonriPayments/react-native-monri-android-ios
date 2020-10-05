@@ -134,8 +134,8 @@ class MonriAndroidIos: NSObject {
                     ).toPaymentMethodParams()
         } else if (type == "savedCard") {
             paymentMethod = SavedCard(
-                    panToken: try requiredStringAttribute(card, "pan", "params.savedCard.panToken"),
-                    cvc: try requiredStringAttribute(card, "pan", "params.savedCard.cvc"))
+                    panToken: try requiredStringAttribute(card, "panToken", "params.savedCard.panToken"),
+                    cvc: try requiredStringAttribute(card, "cvv", "params.savedCard.cvv"))
                     .toPaymentMethodParams()
         } else {
             throw MonriAndroidIosConfirmPaymentError.configurationError("Got unsupported type \(type), expected one of = card, savedCard")
