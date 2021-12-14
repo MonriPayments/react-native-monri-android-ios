@@ -1,9 +1,13 @@
 package com.reactnativemonriandroidios
 
+import android.content.Context
+import androidx.preference.PreferenceManager
 import com.facebook.react.bridge.*
 import com.monri.android.Monri
 import com.monri.android.ResultCallback
 import com.monri.android.model.*
+import org.json.JSONException
+import org.json.JSONObject
 import java.lang.Exception
 
 
@@ -23,6 +27,8 @@ class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContex
     try {
       val options = parseMonriApiOptions(monriApiOptions)
       val confirmPaymentParams = parseConfirmPaymentParams(params)
+
+      writeMetaData(this.reactApplicationContext, String.format("Android-SDK:ReactNative:%s", BuildConfig.MONRI_REACT_NATIVE_PLUGIN_VERSION))
 
       this.monri = Monri(reactApplicationContext, options)
       this.monriActivityListeners = MonriActivityEventListener(monri, this)
@@ -231,4 +237,15 @@ private fun WritableNativeMap.putValueOrNull(key: String, value: String?) {
   } else {
     this.putString(key, value)
   }
+}
+
+private fun MonriAndroidIosModule.writeMetaData(context: Context, library: String) {
+  val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+  val jsonObject = JSONObject()
+  try {
+    jsonObject.put("library", library)
+  } catch (e: JSONException) {
+    e.printStackTrace()
+  }
+  sharedPreferences.edit().putString("monri_cross_platform_meta_key", jsonObject.toString()).apply()
 }
