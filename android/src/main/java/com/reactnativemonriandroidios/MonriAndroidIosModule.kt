@@ -241,11 +241,5 @@ private fun WritableNativeMap.putValueOrNull(key: String, value: String?) {
 
 private fun MonriAndroidIosModule.writeMetaData(context: Context, library: String) {
   val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-  val jsonObject = JSONObject()
-  try {
-    jsonObject.put("library", library)
-  } catch (e: JSONException) {
-    e.printStackTrace()
-  }
-  sharedPreferences.edit().putString("monri_cross_platform_meta_key", jsonObject.toString()).apply()
+  sharedPreferences.edit().putString("com.monri.meta.library", library).apply()
 }
