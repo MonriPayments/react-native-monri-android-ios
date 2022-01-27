@@ -32,7 +32,7 @@ export default function App() {
               saveCard: true
             },
             transaction: {
-              email: 'monri.react.native@gmail.com',
+              email: 'react.native@monri.com',
               orderInfo: 'Monri React Native Plugin Example App',
               phone: '061123213',
               city: 'Sarajevo',

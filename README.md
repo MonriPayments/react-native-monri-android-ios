@@ -25,17 +25,17 @@ const result = await MonriAndroidIos.confirmPayment({
               pan: '4341 7920 0000 0044',
               cvv: '123',
               expiryMonth: 12,
-              expiryYear: 2020,
+              expiryYear: 2032,
               saveCard: true
             },
             transaction: {
-              email: 'test-react-native@monri.com',
-              orderInfo: 'React native bridge???',
+              email: 'react.native@monri.com',
+              orderInfo: 'Monri React Native Plugin Example App',
               phone: '061123213',
               city: 'Sarajevo',
               country: 'BA',
-              address: 'Radnicka',
-              fullName: 'Test Test',
+              address: 'Laticka',
+              fullName: 'React Native',
               zip: '71210',
             },
           });
