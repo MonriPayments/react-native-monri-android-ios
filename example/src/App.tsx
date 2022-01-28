@@ -28,17 +28,17 @@ export default function App() {
               pan: '4341 7920 0000 0044',
               cvv: '123',
               expiryMonth: 12,
-              expiryYear: 2020,
+              expiryYear: 2032,
               saveCard: true
             },
             transaction: {
-              email: 'jasmin.suljich@gmail.com',
-              orderInfo: 'React native bridge???',
+              email: 'react.native@monri.com',
+              orderInfo: 'Monri React Native Plugin Example App',
               phone: '061123213',
               city: 'Sarajevo',
               country: 'BA',
               address: 'Laticka',
-              fullName: 'Jasmin Suljic',
+              fullName: 'React Native',
               zip: '71210',
             },
           }
@@ -60,11 +60,11 @@ export default function App() {
       <Text>Result: {result}</Text>
 
       <Button
-  onPress={onPressLearnMore}
-  title="Start payment"
-  color="#841584"
-  accessibilityLabel="Learn more about this purple button"
-/>
+        onPress={onPressLearnMore}
+        title="Start payment"
+        color="#841584"
+        accessibilityLabel="Learn more about this purple button"
+      />
     </View>
   );
 }
