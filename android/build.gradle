@@ -136,6 +136,7 @@ dependencies {
   // noinspection GradleDynamicVersion
   api 'com.facebook.react:react-native:+'
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+  implementation 'com.monri:monri-android:1.2.4'
   implementation 'androidx.preference:preference:1.1.1'
   implementation 'com.monri:monri-android:1.1.7'
 }

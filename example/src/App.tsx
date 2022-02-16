@@ -32,7 +32,7 @@ export default function App() {
               saveCard: true
             },
             transaction: {
-              email: 'monri.react.native@gmail.com',
+              email: 'react.native@monri.com',
               orderInfo: 'Monri React Native Plugin Example App',
               phone: '061123213',
               city: 'Sarajevo',
@@ -60,11 +60,11 @@ export default function App() {
       <Text>Result: {result}</Text>
 
       <Button
-  onPress={onPressLearnMore}
-  title="Start payment"
-  color="#841584"
-  accessibilityLabel="Learn more about this purple button"
-/>
+        onPress={onPressLearnMore}
+        title="Start payment"
+        color="#841584"
+        accessibilityLabel="Learn more about this purple button"
+      />
     </View>
   );
 }

@@ -44,7 +44,7 @@ export type Transaction = {
 export type SavedCard = {
   panToken: string,
   cvv: string
-}
+};
 
 export type ConfirmPaymentParams = {
   clientSecret: string;
