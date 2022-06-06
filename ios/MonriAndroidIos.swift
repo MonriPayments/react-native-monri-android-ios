@@ -160,12 +160,12 @@ class MonriAndroidIos: NSObject {
 
     }
 
-    private func writeMetaData(){
-            let version: String = "0.3.0"
+    private func writeMetaData() {
+        let version: String = "0.3.0"
 
-            let defaults = UserDefaults.standard
-            defaults.set("iOS-SDK:ReactNative:\(version)", forKey: "com.monri.meta.library")
-        }
+        let defaults = UserDefaults.standard
+        defaults.set("iOS-SDK:ReactNative:\(version)", forKey: "com.monri.meta.library")
+    }
 
     private func getString(_ params: [String: Any], _ key: String) -> String? {
         return params[key] as? String
