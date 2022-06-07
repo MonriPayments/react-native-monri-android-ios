@@ -25,6 +25,9 @@ class MonriAndroidIos: NSObject {
             let confirmPaymentParams = try parseConfirmPaymentParams(params as! [String: Any])
             let delegate = UIApplication.shared.delegate!
             let vc = delegate.window!!.rootViewController!
+
+            writeMetaData()
+
             let monri = MonriApi(vc, options: options)
             monri.confirmPayment(confirmPaymentParams) { [weak self] result in
 
@@ -155,6 +158,13 @@ class MonriAndroidIos: NSObject {
                 .set("order_info", transactionParams["orderInfo"] as? String)
         )
 
+    }
+
+    private func writeMetaData() {
+        let version: String = "0.3.0"
+
+        let defaults = UserDefaults.standard
+        defaults.set("iOS-SDK:ReactNative:\(version)", forKey: "com.monri.meta.library")
     }
 
     private func getString(_ params: [String: Any], _ key: String) -> String? {
