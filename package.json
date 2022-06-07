@@ -1,6 +1,6 @@
 {
   "name": "react-native-monri-android-ios",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "React Native bridge for Monri Android/iOS SDK",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
