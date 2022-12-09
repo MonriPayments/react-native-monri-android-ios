@@ -1,6 +1,5 @@
 package com.reactnativemonriandroidios
 
-import android.R.attr
 import android.app.Activity
 import android.content.Intent
 import com.facebook.react.bridge.BaseActivityEventListener
