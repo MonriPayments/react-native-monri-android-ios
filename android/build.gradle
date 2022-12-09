@@ -1,5 +1,5 @@
 group 'com.example.MonriPayments'
-version '0.3.1'
+version '0.3.2'
 
 buildscript {
   // Buildscript is evaluated before everything else so we can't use getExtOrDefault
