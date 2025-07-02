@@ -13,3 +13,6 @@
 13. bumped the version to ios 16
 14. pod install passes with warning Generated duplicate UUIDs
 15. removed Pods and podfile.lock and ran a reinstall
+16. disabled hermes and ran a reinstall with full cache clear
+17. a lot of steps i forgot to cover, one important one was to remove Asstes.car from output files in copy recources build phase
+18. iOS works
