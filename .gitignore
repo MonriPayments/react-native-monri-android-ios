@@ -31,6 +31,8 @@ project.xcworkspace
 
 # Android/IJ
 #
+java_pid98945.hprof
+.cxx
 .idea
 .gradle
 local.properties
