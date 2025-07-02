@@ -1,20 +1,49 @@
-install! 'cocoapods', :disable_input_output_paths => true
-require_relative '../node_modules/react-native/scripts/react_native_pods'
+require Pod::Executable.execute_command('node', ['-p',
+  'require.resolve(
+    "react-native/scripts/react_native_pods.rb",
+    {paths: [process.argv[1]]},
+  )', __dir__]).strip
 
-platform :ios, '16.0'
+platform :ios, min_ios_version_supported
+prepare_react_native_project!
+
+linkage = ENV['USE_FRAMEWORKS']
+if linkage != nil
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+  use_frameworks! :linkage => linkage.to_sym
+end
 
 target 'MonriAndroidIosExample' do
   config = use_native_modules!
 
-  use_react_native!(path: '../node_modules/react-native')
+  use_react_native!(
+    :path => '../node_modules/react-native',
+    :hermes_enabled => false,
+    # An absolute path to your application root.
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
 
   pod 'react-native-monri-android-ios', :path => '../..'
 
   post_install do |installer|
-    # 1) Ensure every pod target uses at least iOS 13.0
-    installer.pods_project.targets.each do |t|
-      t.build_configurations.each do |config|
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+    # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false
+    )
+    
+    # Fix for "Multiple commands produce Assets.car"
+    installer.pods_project.targets.each do |target|
+      if target.name == "MonriAndroidIosExample"
+        target.build_phases.each do |phase|
+          if phase.name == "[CP] Copy Pods Resources"
+            # Remove Assets.car from input paths
+            phase.input_paths.delete_if { |path| path.include?("Assets.car") }
+            # Remove Assets.car from output paths
+            phase.output_paths.delete_if { |path| path.include?("Assets.car") }
+          end
+        end
       end
     end
   end
