@@ -9,7 +9,9 @@
     "start": "react-native start"
   },
   "dependencies": {
+    "@types/crypto-js": "^4.2.2",
     "@types/react": "19.1.8",
+    "crypto-js": "^4.2.0",
     "react": "19.1.0",
     "react-native": "0.80.0",
     "react-native-svg-transformer": "^1.5.1"

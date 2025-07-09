@@ -1,25 +1,54 @@
 import * as React from 'react';
 import { StyleSheet, View, Text, Button } from 'react-native';
 import MonriAndroidIos from 'react-native-monri-android-ios';
+import sha512 from 'crypto-js/sha512';
 
 export default function App() {
   const [result, setResult] = React.useState<string | undefined>();
 
   function onPressLearnMore() {
-    fetch('https://mobile.webteh.hr/example/create-payment-session', {
+    const key = 'your-merchant-key';
+    const authenticityToken = '6a13d79bde8da9320e88923cb3472fb638619ccb';
+
+    const transactionData = {
+      amount: 100,
+      order_number: `rn-example-${new Date().getTime()}`,
+      currency: 'EUR',
+      transaction_type: 'purchase',
+      order_info: 'Create payment session order info',
+      scenario: 'charge',
+    };
+
+    const bodyAsString = JSON.stringify(transactionData);
+    const timestamp = Math.floor(Date.now() / 1000);
+    const digest = sha512(key + timestamp + authenticityToken + bodyAsString).toString();
+    const authorization = `WP3-v2 ${authenticityToken} ${timestamp} ${digest}`;
+
+    fetch('https://ipgtest.monri.com/v2/payment/new', {
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'Content-Length': bodyAsString.length.toString(),
+        'Authorization': authorization,
       },
-      body: JSON.stringify({}),
+      body: bodyAsString,
     })
-      .then((v) => v.json())
+      .then((response) => {
+        // Clone the response so we can read it twice
+        const clonedResponse = response.clone();
+        return response.json().catch(() => {
+          // If .json() fails, read the response as text
+          return clonedResponse.text().then((text) => {
+            console.error('Server response was not valid JSON:', text);
+            throw new Error(`Server returned non-JSON response. Check console for details.`);
+          });
+        });
+      })
       .then((json) => {
         // return MonriAndroidIos.multiply(1, 2);
         return MonriAndroidIos.confirmPayment(
           {
-            authenticityToken: '6a13d79bde8da9320e88923cb3472fb638619ccb',
+            authenticityToken: authenticityToken,
             developmentMode: true,
           },
           {
@@ -28,8 +57,8 @@ export default function App() {
               pan: '4341 7920 0000 0044',
               cvv: '123',
               expiryMonth: 12,
-              expiryYear: 2032,
-              saveCard: true
+              expiryYear: 2027,
+              saveCard: false
             },
             transaction: {
               email: 'react.native@monri.com',
