@@ -4,6 +4,5 @@ extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autoli
 
 rootProject.name = 'MonriAndroidIosExample'
 
-include ':reactnativemonriandroidios', ':app'
-project(':reactnativemonriandroidios').projectDir = new File(rootProject.projectDir, '../../android')
+include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
