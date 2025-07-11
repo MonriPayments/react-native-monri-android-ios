@@ -30,6 +30,9 @@ def getExtOrIntegerDefault(name) {
 }
 
 android {
+
+  namespace "com.reactnativemonriandroidios"
+
   compileSdkVersion getExtOrIntegerDefault('compileSdkVersion')
   buildToolsVersion getExtOrDefault('buildToolsVersion')
   defaultConfig {
