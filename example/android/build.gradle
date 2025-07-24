@@ -8,6 +8,7 @@ buildscript {
         targetSdkVersion = 35
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.1.20"
+        monriReactNativeVersionName = "0.4.0"
     }
     repositories {
         google()
