@@ -6,3 +6,5 @@ rootProject.name = 'MonriAndroidIosExample'
 
 include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
+include ':react-native-monri-android-ios'
+project(':react-native-monri-android-ios').projectDir = new File(rootProject.projectDir, '../../android')

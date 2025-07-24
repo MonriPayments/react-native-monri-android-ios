@@ -7,8 +7,8 @@ export default function App() {
   const [result, setResult] = React.useState<string | undefined>();
 
   function onPressLearnMore() {
-    const key = 'your-merchant-key';
-    const authenticityToken = '6a13d79bde8da9320e88923cb3472fb638619ccb';
+    const key = 'key-e428ba618ebc232a595d0851398b8a5d';
+    const authenticityToken = 'c6301017117302601b823874972a97acce96f2df';
 
     const transactionData = {
       amount: 100,
