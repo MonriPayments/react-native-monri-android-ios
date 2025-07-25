@@ -1,6 +1,10 @@
-rootProject.name = 'MonriAndroidIosExample'
-apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesSettingsGradle(settings)
-include ':app'
+pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
+plugins { id("com.facebook.react.settings") }
+extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
 
-include ':reactnativemonriandroidios'
-project(':reactnativemonriandroidios').projectDir = new File(rootProject.projectDir, '../../android')
+rootProject.name = 'MonriAndroidIosExample'
+
+include ':app'
+includeBuild('../node_modules/@react-native/gradle-plugin')
+include ':react-native-monri-android-ios'
+project(':react-native-monri-android-ios').projectDir = new File(rootProject.projectDir, '../../android')

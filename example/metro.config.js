@@ -1,40 +1,21 @@
 const path = require('path');
-const blacklist = require('metro-config/src/defaults/blacklist');
-const escape = require('escape-string-regexp');
-const pak = require('../package.json');
+const { getDefaultConfig } = require('@react-native/metro-config');
 
-const root = path.resolve(__dirname, '..');
+const projectRoot = __dirname;
+const workspaceRoot = path.resolve(projectRoot, '..');
 
-const modules = Object.keys({
-  ...pak.peerDependencies,
-});
+const config = getDefaultConfig(projectRoot);
 
-module.exports = {
-  projectRoot: __dirname,
-  watchFolders: [root],
+// Allow Metro to watch files outside of the project root (i.e., your library's src folder)
+config.watchFolders = [workspaceRoot];
 
-  // We need to make sure that only one version is loaded for peerDependencies
-  // So we blacklist them at the root, and alias them to the versions in example's node_modules
-  resolver: {
-    blacklistRE: blacklist(
-      modules.map(
-        (m) =>
-          new RegExp(`^${escape(path.join(root, 'node_modules', m))}\\/.*$`)
-      )
-    ),
+// Let Metro know where to resolve packages that are dependencies of your library
+config.resolver.nodeModulesPaths = [
+  path.resolve(projectRoot, 'node_modules'),
+  path.resolve(workspaceRoot, 'node_modules'),
+];
 
-    extraNodeModules: modules.reduce((acc, name) => {
-      acc[name] = path.join(__dirname, 'node_modules', name);
-      return acc;
-    }, {}),
-  },
+// Prevent Metro from complaining about duplicate packages
+config.resolver.disableHierarchicalLookup = true;
 
-  transformer: {
-    getTransformOptions: async () => ({
-      transform: {
-        experimentalImportSupport: false,
-        inlineRequires: true,
-      },
-    }),
-  },
-};
+module.exports = config;

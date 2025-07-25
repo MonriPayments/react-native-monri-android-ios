@@ -210,7 +210,8 @@ class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContex
       this.reactApplicationContext.removeActivityEventListener(monriActivityListeners)
     }
     if (this::confirmPaymentPromise.isInitialized) {
-      this.confirmPaymentPromise.reject(throwable)
+      val error = throwable ?: Exception("Unknown error occurred")
+      this.confirmPaymentPromise.reject(error)
     }
   }
 
