@@ -105,8 +105,8 @@ class MonriAndroidIos: NSObject {
         var merchantID: String?
 
         if(type == "applePay") {
-            merchantID = params["merchantID"] as? String ?? params["merchantId"] as? String
-            guard let merchantID = merchantID else {
+            guard let merchantID = params["merchantID"] as? String
+            else {
                 throw MonriAndroidIosConfirmPaymentError.missingRequiredAttribute("merchantID")
             }
             return MonriApiOptions(authenticityToken: authenticityToken, developmentMode: developmentMode, merchantID: merchantID)
