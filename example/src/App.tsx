@@ -6,9 +6,9 @@ import sha512 from 'crypto-js/sha512';
 export default function App() {
   const [result, setResult] = React.useState<string | undefined>();
 
-  const key = 'your-secret-key';
-  const authenticityToken = 'your-authenticity-token';
-  const applePayMerchantID = 'your-apple-pay-merchant-id';
+  const key = 'your_key_here';
+  const authenticityToken = 'your_authenticity_token_here';
+  const applePayMerchantID = 'your_apple_pay_merchant_id_here';
 
   const createPaymentSession = React.useCallback(async () => {
     const transactionData = {
@@ -27,7 +27,7 @@ export default function App() {
     ).toString();
     const authorization = `WP3-v2 ${authenticityToken} ${timestamp} ${digest}`;
 
-    const response = await fetch('your-client-secret-endpoint', {
+    const response = await fetch('https://ipgtest.monri.com/v2/payment/new', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

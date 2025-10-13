@@ -4,6 +4,29 @@ import PassKit
 
 @objc(MonriAndroidIos)
 class MonriAndroidIos: NSObject {
+    private final class PromiseBox {
+        var resolve: RCTPromiseResolveBlock?
+        var reject: RCTPromiseRejectBlock?
+        private let lock = NSLock()
+        private var settled = false
+
+        init(resolve: RCTPromiseResolveBlock?, reject: RCTPromiseRejectBlock?) {
+            self.resolve = resolve
+            self.reject = reject
+        }
+
+        func settle(_ action: () -> Void) {
+            lock.lock()
+            let shouldRun = !settled
+            if shouldRun { settled = true }
+            lock.unlock()
+
+            guard shouldRun else { return }
+            action()
+            resolve = nil
+            reject = nil
+        }
+    }
 
     @objc static func requiresMainQueueSetup() -> Bool {
         return true
@@ -22,22 +45,18 @@ class MonriAndroidIos: NSObject {
     }
 
     private func __call(monriApiOptions: NSDictionary, params: NSDictionary, resolve: RCTPromiseResolveBlock?, reject: RCTPromiseRejectBlock?) {
-        var resolveOnce = resolve
-        var rejectOnce = reject
-        var settled = false
-        let lock = NSLock()
-
-        func settle(_ block: () -> Void) {
-            lock.lock(); guard !settled else { lock.unlock(); return }
-            settled = true; lock.unlock(); block()
-            resolveOnce = nil; rejectOnce = nil
-        }
+        let promise = PromiseBox(resolve: resolve, reject: reject)
 
         do {
             let paramsDict = params as! [String: Any]
-            let options = try parseMonriApiOptions(monriApiOptions as! [String: Any])
-            let confirmPaymentParams = try parseConfirmPaymentParams(paramsDict)
-            let applePayCustomisation = getApplePayCustomisation(paramsDict)
+            let type = paramsDict["type"] as? String ?? "card"
+            let options = try parseMonriApiOptions(monriApiOptions as! [String: Any], type: type)
+            let confirmPaymentParams = try parseConfirmPaymentParams(paramsDict, merchantID: options.merchantID)
+            var applePayCustomisation: (PKPaymentButtonType, PKPaymentButtonStyle)?
+            
+            if type == "applePay" {
+                applePayCustomisation = getApplePayCustomisation(paramsDict)
+            }
 
             let delegate = UIApplication.shared.delegate!
             let vc = delegate.window!!.rootViewController!
@@ -46,51 +65,16 @@ class MonriAndroidIos: NSObject {
             writeMetaData()
 
             let monri = MonriApi(vc, options: options)
-            monri.confirmPayment(confirmPaymentParams, applePayCustomisation: applePayCustomisation) { [weak self] result in
-                guard self != nil else { return }
-
-                DispatchQueue.main.async {
-
-                    switch result {
-                    case .result(let paymentResult) where paymentResult.status.lowercased() == "pending":
-                        return
-                    case .result(let paymentResult):
-                        var rv: [String: Any] = [
-                            "status": paymentResult.status,
-                            "currency": paymentResult.currency,
-                            "amount": paymentResult.amount,
-                            "orderNumber": paymentResult.orderNumber,
-                            "createdAt": paymentResult.createdAt,
-                            "transactionType": paymentResult.transactionType,
-                        ]
-
-                        if let pm = paymentResult.paymentMethod,
-                           let data = pm.data as? [String: Any] {
-                            rv["paymentMethod"] = [
-                                "type": pm.type,
-                                "data": [
-                                    "brand": data["brand"] ?? "",
-                                    "expirationDate": data["expiration_date"] ?? "",
-                                    "issuer": data["issuer"] ?? "",
-                                    "masked": data["masked"] ?? "",
-                                    "token": data["token"] ?? ""
-                                ]
-                            ]
-                        }
-
-                        if let panToken = paymentResult.panToken {
-                            rv["panToken"] = panToken
-                        }
-
-                        rv["errors"] = paymentResult.errors
-
-                        settle { resolveOnce?(rv) }
-                    case .error(let e):
-                        settle { rejectOnce?("confirm_payment_error", e.localizedDescription, nil) }
-                    case .declined(let d):
-                        settle { resolveOnce?(["status": d.status]) }
-                    case .pending:
-                    }
+            if let customisation = applePayCustomisation {
+                monri.confirmPayment(
+                    confirmPaymentParams,
+                    applePayCustomisation: customisation
+                ) { result in
+                    self.handleConfirmPaymentResult(result, promise: promise)
+                }
+            } else {
+                monri.confirmPayment(confirmPaymentParams) { result in
+                    self.handleConfirmPaymentResult(result, promise: promise)
                 }
             }
         } catch {
@@ -108,20 +92,30 @@ class MonriAndroidIos: NSObject {
                 }
 
             } else {
-                reject?(MonriAndroidIosConfirmPaymentErrorCodes.unknown.rawValue, error.localizedDescription, error)
+                promise.settle {
+                    reject?(MonriAndroidIosConfirmPaymentErrorCodes.unknown.rawValue, error.localizedDescription, error)
+                }
             }
         }
     }
 
-    private func parseMonriApiOptions(_ params: [String: Any]) throws -> MonriApiOptions {
+    private func parseMonriApiOptions(_ params: [String: Any], type: String) throws -> MonriApiOptions {
         let authenticityToken = try requiredStringAttribute(params, "authenticityToken")
         let developmentMode = params["developmentMode"] as? Bool ?? false
-        let merchantID = params["merchantID"] as? String ?? params["merchantId"]
+        var merchantID: String?
 
-        return MonriApiOptions(authenticityToken: authenticityToken, developmentMode: developmentMode, merchantID: merchantID)
+        if(type == "applePay") {
+            merchantID = params["merchantID"] as? String ?? params["merchantId"] as? String
+            guard let merchantID = merchantID else {
+                throw MonriAndroidIosConfirmPaymentError.missingRequiredAttribute("merchantID")
+            }
+            return MonriApiOptions(authenticityToken: authenticityToken, developmentMode: developmentMode, merchantID: merchantID)
+        }
+
+        return MonriApiOptions(authenticityToken: authenticityToken, developmentMode: developmentMode)
     }
 
-    private func parseConfirmPaymentParams(_ params: [String: Any]) throws -> ConfirmPaymentParams {
+    private func parseConfirmPaymentParams(_ params: [String: Any], merchantID: String?) throws -> ConfirmPaymentParams {
         let clientSecret = try requiredStringAttribute(params, "clientSecret")
         guard let transactionParams = params["transaction"] as? [String: Any] else {
             throw MonriAndroidIosConfirmPaymentError.missingRequiredAttribute("transaction")
@@ -151,6 +145,9 @@ class MonriAndroidIos: NSObject {
                 cvc: try requiredStringAttribute(savedCardParams, "cvv", "params.savedCard.cvv")
             ).toPaymentMethodParams()
         case "applePay":
+            guard let merchantID = merchantID else {
+                throw MonriAndroidIosConfirmPaymentError.missingRequiredAttribute("params.merchantID")
+            }
             paymentMethod = ApplePayPayment(paymentProvider: .APPLE_PAY).toPaymentMethodParams()
         default:
             throw MonriAndroidIosConfirmPaymentError.configurationError("Got unsupported type \(type), expected one of = card, savedCard, applePay")
@@ -200,15 +197,6 @@ class MonriAndroidIos: NSObject {
         return value
     }
 
-    private func prettyJSONString(_ object: Any) -> String {
-        if JSONSerialization.isValidJSONObject(object),
-           let data = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys]),
-           let string = String(data: data, encoding: .utf8) {
-            return string
-        }
-        return String(describing: object)
-    }
-
     private func getApplePayCustomisation(_ params: [String: Any]) -> (PKPaymentButtonType, PKPaymentButtonStyle)? {
         guard
             let typeValue = params["pkPaymentButtonType"],
@@ -224,6 +212,59 @@ class MonriAndroidIos: NSObject {
         }
 
         return (type, style)
+    }
+
+    private func handleConfirmPaymentResult(
+        _ result: Monri.ConfirmPaymentResult,
+        promise: PromiseBox
+    ) {
+        switch result {
+        case .result(let paymentResult) where paymentResult.status.lowercased() == "pending":
+            return
+        case .result(let paymentResult):
+            var rv: [String: Any] = [
+                "status": paymentResult.status,
+                "currency": paymentResult.currency,
+                "amount": paymentResult.amount,
+                "orderNumber": paymentResult.orderNumber,
+                "createdAt": paymentResult.createdAt,
+                "transactionType": paymentResult.transactionType,
+            ]
+
+            if let pm = paymentResult.paymentMethod,
+               let data = pm.data as? [String: Any] {
+                rv["paymentMethod"] = [
+                    "type": pm.type,
+                    "data": [
+                        "brand": data["brand"] ?? "",
+                        "expirationDate": data["expiration_date"] ?? "",
+                        "issuer": data["issuer"] ?? "",
+                        "masked": data["masked"] ?? "",
+                        "token": data["token"] ?? ""
+                    ]
+                ]
+            }
+
+            if let panToken = paymentResult.panToken {
+                rv["panToken"] = panToken
+            }
+
+            rv["errors"] = paymentResult.errors
+
+            promise.settle {
+                promise.resolve?(rv)
+            }
+        case .error(let e):
+            promise.settle {
+                promise.reject?("confirm_payment_error", e.localizedDescription, nil)
+            }
+        case .declined(let d):
+            promise.settle {
+                promise.resolve?(["status": d.status])
+            }
+        case .pending:
+            break
+        }
     }
 
     enum MonriAndroidIosConfirmPaymentErrorCodes: String {
