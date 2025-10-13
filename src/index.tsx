@@ -3,6 +3,7 @@ import { NativeModules } from 'react-native';
 export type MonriApiOptions = {
   authenticityToken: string;
   developmentMode: boolean;
+  merchantID?: string;
 };
 
 export type SavedPaymentMethod = {
@@ -42,15 +43,18 @@ export type Transaction = {
 };
 
 export type SavedCard = {
-  panToken: string,
-  cvv: string
+  panToken: string;
+  cvv: string;
 };
 
 export type ConfirmPaymentParams = {
+  type: string;
   clientSecret: string;
   card?: Card;
   savedCard?: SavedCard;
   transaction: Transaction;
+  pkPaymentButtonType?: number | null;
+  pkPaymentButtonStyle?: number | null;
 };
 
 type MonriAndroidIosType = {

@@ -10,7 +10,7 @@
 		13B07FBD1A68108700A75B9A /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB11A68108700A75B9A /* LaunchScreen.xib */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		20F357B024636CDF00C146DC /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20F357AF24636CDF00C146DC /* File.swift */; };
-		2E7A8350633EBF60CD6D045A /* libPods-MonriAndroidIosExample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 686E4415F81B35B0BDA8B740 /* libPods-MonriAndroidIosExample.a */; };
+		58BA7B1ACA5529DEAC5BD724 /* libPods-MonriAndroidIosExample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E6222E5DE4CA4BE09658EFD8 /* libPods-MonriAndroidIosExample.a */; };
 		B28B06342E153CBE00844303 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B28B06332E153CBE00844303 /* AppDelegate.swift */; };
 		CF15F612DF9C4CA62D341F8A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 2B94AFF4C9D4AC17925336B4 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
@@ -24,11 +24,14 @@
 		20F357AE24636CDF00C146DC /* MonriAndroidIosExample-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "MonriAndroidIosExample-Bridging-Header.h"; sourceTree = "<group>"; };
 		20F357AF24636CDF00C146DC /* File.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
 		2B94AFF4C9D4AC17925336B4 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = MonriAndroidIosExample/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		686E4415F81B35B0BDA8B740 /* libPods-MonriAndroidIosExample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-MonriAndroidIosExample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		77F996F524D082F0152EB638 /* Pods-MonriAndroidIosExample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MonriAndroidIosExample.debug.xcconfig"; path = "Target Support Files/Pods-MonriAndroidIosExample/Pods-MonriAndroidIosExample.debug.xcconfig"; sourceTree = "<group>"; };
-		9A9124C76B439B3BE59B7032 /* Pods-MonriAndroidIosExample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MonriAndroidIosExample.release.xcconfig"; path = "Target Support Files/Pods-MonriAndroidIosExample/Pods-MonriAndroidIosExample.release.xcconfig"; sourceTree = "<group>"; };
+		566F6AFD456C036E3D98DC10 /* Pods-MonriAndroidIosExample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MonriAndroidIosExample.release.xcconfig"; path = "Target Support Files/Pods-MonriAndroidIosExample/Pods-MonriAndroidIosExample.release.xcconfig"; sourceTree = "<group>"; };
 		B28B06332E153CBE00844303 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		B2D8ACFA2E951A9300F20955 /* main.jsbundle */ = {isa = PBXFileReference; lastKnownFileType = text; path = main.jsbundle; sourceTree = "<group>"; };
+		B2D8ACFB2E951AB900F20955 /* main.jsbundle */ = {isa = PBXFileReference; lastKnownFileType = text; path = main.jsbundle; sourceTree = "<group>"; };
+		B2E0D7522E9CF5380004099A /* MonriAndroidIosExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = MonriAndroidIosExample.entitlements; path = MonriAndroidIosExample/MonriAndroidIosExample.entitlements; sourceTree = "<group>"; };
+		E6222E5DE4CA4BE09658EFD8 /* libPods-MonriAndroidIosExample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-MonriAndroidIosExample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		EE91C10824BBAFADB155566A /* Pods-MonriAndroidIosExample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MonriAndroidIosExample.debug.xcconfig"; path = "Target Support Files/Pods-MonriAndroidIosExample/Pods-MonriAndroidIosExample.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -36,7 +39,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2E7A8350633EBF60CD6D045A /* libPods-MonriAndroidIosExample.a in Frameworks */,
+				58BA7B1ACA5529DEAC5BD724 /* libPods-MonriAndroidIosExample.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -46,6 +49,7 @@
 		13B07FAE1A68108700A75B9A /* MonriAndroidIosExample */ = {
 			isa = PBXGroup;
 			children = (
+				B2E0D7522E9CF5380004099A /* MonriAndroidIosExample.entitlements */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				13B07FB11A68108700A75B9A /* LaunchScreen.xib */,
@@ -58,8 +62,8 @@
 		1CFFDEF7170271C97B8B7E5A /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				77F996F524D082F0152EB638 /* Pods-MonriAndroidIosExample.debug.xcconfig */,
-				9A9124C76B439B3BE59B7032 /* Pods-MonriAndroidIosExample.release.xcconfig */,
+				EE91C10824BBAFADB155566A /* Pods-MonriAndroidIosExample.debug.xcconfig */,
+				566F6AFD456C036E3D98DC10 /* Pods-MonriAndroidIosExample.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -67,8 +71,9 @@
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				B2D8ACFA2E951A9300F20955 /* main.jsbundle */,
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				686E4415F81B35B0BDA8B740 /* libPods-MonriAndroidIosExample.a */,
+				E6222E5DE4CA4BE09658EFD8 /* libPods-MonriAndroidIosExample.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -83,6 +88,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				B2D8ACFB2E951AB900F20955 /* main.jsbundle */,
 				20F357AF24636CDF00C146DC /* File.swift */,
 				20F357AE24636CDF00C146DC /* MonriAndroidIosExample-Bridging-Header.h */,
 				13B07FAE1A68108700A75B9A /* MonriAndroidIosExample */,
@@ -112,13 +118,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "MonriAndroidIosExample" */;
 			buildPhases = (
-				E13799081858ED1B98382A4E /* [CP] Check Pods Manifest.lock */,
+				C43585681EC58289EB68DC09 /* [CP] Check Pods Manifest.lock */,
 				FD10A7F022414F080027D42C /* Start Packager */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				AC00AE03E836C0CF728C0C07 /* [CP] Copy Pods Resources */,
+				311B42436F531F51F1B7DAD9 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -139,7 +145,7 @@
 				ORGANIZATIONNAME = Facebook;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
-						DevelopmentTeam = A92Q83M65K;
+						DevelopmentTeam = V84HBA3M4U;
 						LastSwiftMigration = 1110;
 					};
 				};
@@ -191,17 +197,13 @@
 			shellPath = /bin/sh;
 			shellScript = "export NODE_BINARY=node\n../node_modules/react-native/scripts/react-native-xcode.sh\n";
 		};
-		AC00AE03E836C0CF728C0C07 /* [CP] Copy Pods Resources */ = {
+		311B42436F531F51F1B7DAD9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-MonriAndroidIosExample/Pods-MonriAndroidIosExample-resources.sh",
-				"${PODS_ROOT}/Caishen/Pod/Assets/Media.xcassets",
-				"${PODS_ROOT}/Caishen/Pod/Resources/de.lproj",
-				"${PODS_ROOT}/Caishen/Pod/Resources/en.lproj",
-				"${PODS_ROOT}/Caishen/Pod/Resources/zh-Hans.lproj",
 				"${PODS_CONFIGURATION_BUILD_DIR}/Monri/Monri.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/RCT-Folly_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core_privacy.bundle",
@@ -211,9 +213,6 @@
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/de.lproj",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/en.lproj",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/zh-Hans.lproj",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/Monri.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RCT-Folly_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-Core_privacy.bundle",
@@ -226,7 +225,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MonriAndroidIosExample/Pods-MonriAndroidIosExample-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		E13799081858ED1B98382A4E /* [CP] Check Pods Manifest.lock */ = {
+		C43585681EC58289EB68DC09 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -296,13 +295,14 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 77F996F524D082F0152EB638 /* Pods-MonriAndroidIosExample.debug.xcconfig */;
+			baseConfigurationReference = EE91C10824BBAFADB155566A /* Pods-MonriAndroidIosExample.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = MonriAndroidIosExample/MonriAndroidIosExample.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = NO;
-				DEVELOPMENT_TEAM = A92Q83M65K;
+				DEVELOPMENT_TEAM = V84HBA3M4U;
 				GCC_NO_COMMON_BLOCKS = YES;
 				INFOPLIST_FILE = MonriAndroidIosExample/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
@@ -316,7 +316,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.MonriAndroidIosExample.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = org.cocoapods.demo.MonriExample;
 				PRODUCT_NAME = MonriAndroidIosExample;
 				SWIFT_OBJC_BRIDGING_HEADER = "MonriAndroidIosExample-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -327,12 +327,13 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9A9124C76B439B3BE59B7032 /* Pods-MonriAndroidIosExample.release.xcconfig */;
+			baseConfigurationReference = 566F6AFD456C036E3D98DC10 /* Pods-MonriAndroidIosExample.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = MonriAndroidIosExample/MonriAndroidIosExample.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = A92Q83M65K;
+				DEVELOPMENT_TEAM = V84HBA3M4U;
 				GCC_NO_COMMON_BLOCKS = YES;
 				INFOPLIST_FILE = MonriAndroidIosExample/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
@@ -346,7 +347,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.MonriAndroidIosExample.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = org.cocoapods.demo.MonriExample;
 				PRODUCT_NAME = MonriAndroidIosExample;
 				SWIFT_OBJC_BRIDGING_HEADER = "MonriAndroidIosExample-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
