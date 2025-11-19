@@ -2,135 +2,106 @@ group 'com.example.MonriPayments'
 version '0.3.2'
 
 buildscript {
-  // Buildscript is evaluated before everything else so we can't use getExtOrDefault
-  def kotlin_version = rootProject.ext.has('kotlinVersion') ? rootProject.ext.get('kotlinVersion') : project.properties['MonriAndroidIos_kotlinVersion']
-
   repositories {
     google()
     mavenCentral()
     maven { url 'https://jitpack.io' }
   }
-
   dependencies {
-    classpath 'com.android.tools.build:gradle:7.0.2'
-    // noinspection DifferentKotlinGradleVersion
-    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    classpath "com.android.tools.build:gradle:8.5.2"
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20"
   }
 }
 
 apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 def getExtOrDefault(name) {
   return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['MonriAndroidIos_' + name]
 }
-
 def getExtOrIntegerDefault(name) {
   return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties['MonriAndroidIos_' + name]).toInteger()
 }
 
 android {
-
   namespace "com.reactnativemonriandroidios"
 
-  compileSdkVersion getExtOrIntegerDefault('compileSdkVersion')
-  buildToolsVersion getExtOrDefault('buildToolsVersion')
+  compileSdk getExtOrIntegerDefault('compileSdkVersion')
   defaultConfig {
-    minSdkVersion 19
-    targetSdkVersion getExtOrIntegerDefault('targetSdkVersion')
+    minSdk 21
+    targetSdk getExtOrIntegerDefault('targetSdkVersion')
     versionCode 1
     versionName "1.0.0"
+    consumerProguardFiles "consumer-rules.pro"
+  }
 
+  buildFeatures {
+    buildConfig true
   }
 
   buildTypes {
+    debug {
+      buildConfigField "String", "MONRI_REACT_NATIVE_PLUGIN_VERSION", "\"${version}\""
+    }
     release {
       minifyEnabled false
-    }
-  }
-  lintOptions {
-    disable 'GradleCompatible'
-  }
-  compileOptions {
-    sourceCompatibility JavaVersion.VERSION_11
-    targetCompatibility JavaVersion.VERSION_11
-  }
-
-  buildTypes {
-    release {
-      buildConfigField "String", 'MONRI_REACT_NATIVE_PLUGIN_VERSION', "\"${version}\""
+      buildConfigField "String", "MONRI_REACT_NATIVE_PLUGIN_VERSION", "\"${version}\""
     }
     profile {
-      buildConfigField "String", 'MONRI_REACT_NATIVE_PLUGIN_VERSION', "\"${version}\""
-    }
-    debug {
-      buildConfigField "String", 'MONRI_REACT_NATIVE_PLUGIN_VERSION', "\"${version}\""
+      initWith debug
+      buildConfigField "String", "MONRI_REACT_NATIVE_PLUGIN_VERSION", "\"${version}\""
+      matchingFallbacks = ["debug"]
     }
   }
 
   compileOptions {
-    sourceCompatibility JavaVersion.VERSION_11
-    targetCompatibility JavaVersion.VERSION_11
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+
+  kotlinOptions {
+    jvmTarget = "17"
+  }
+
+  lint {
+    disable += ['GradleCompatible']
   }
 }
 
 repositories {
+  google()
   mavenCentral()
   maven { url 'https://jitpack.io' }
-  google()
 
   def found = false
-  def defaultDir = null
+  def defaultDir
   def androidSourcesName = 'React Native sources'
 
   if (rootProject.ext.has('reactNativeAndroidRoot')) {
     defaultDir = rootProject.ext.get('reactNativeAndroidRoot')
   } else {
-    defaultDir = new File(
-            projectDir,
-            '/../../../node_modules/react-native/android'
-    )
+    defaultDir = new File(projectDir, '/../../../node_modules/react-native/android')
   }
 
   if (defaultDir.exists()) {
-    maven {
-      url defaultDir.toString()
-      name androidSourcesName
-    }
-
+    maven { url defaultDir.toString(); name androidSourcesName }
     logger.info(":${project.name}:reactNativeAndroidRoot ${defaultDir.canonicalPath}")
     found = true
   } else {
     def parentDir = rootProject.projectDir
-
     1.upto(5, {
       if (found) return true
       parentDir = parentDir.parentFile
 
-      def androidSourcesDir = new File(
-              parentDir,
-              'node_modules/react-native'
-      )
-
-      def androidPrebuiltBinaryDir = new File(
-              parentDir,
-              'node_modules/react-native/android'
-      )
+      def androidSourcesDir = new File(parentDir, 'node_modules/react-native')
+      def androidPrebuiltBinaryDir = new File(parentDir, 'node_modules/react-native/android')
 
       if (androidPrebuiltBinaryDir.exists()) {
-        maven {
-          url androidPrebuiltBinaryDir.toString()
-          name androidSourcesName
-        }
-
+        maven { url androidPrebuiltBinaryDir.toString(); name androidSourcesName }
         logger.info(":${project.name}:reactNativeAndroidRoot ${androidPrebuiltBinaryDir.canonicalPath}")
         found = true
       } else if (androidSourcesDir.exists()) {
-        maven {
-          url androidSourcesDir.toString()
-          name androidSourcesName
-        }
-
+        maven { url androidSourcesDir.toString(); name androidSourcesName }
         logger.info(":${project.name}:reactNativeAndroidRoot ${androidSourcesDir.canonicalPath}")
         found = true
       }
@@ -138,19 +109,13 @@ repositories {
   }
 
   if (!found) {
-    throw new GradleException(
-            "${project.name}: unable to locate React Native android sources. " +
-                    "Ensure you have you installed React Native as a dependency in your project and try again."
-    )
+    throw new GradleException("${project.name}: unable to locate React Native android sources. Ensure React Native is installed and try again.")
   }
 }
 
-def kotlin_version = getExtOrDefault('kotlinVersion')
-
 dependencies {
-  // noinspection GradleDynamicVersion
-  api 'com.facebook.react:react-native:+'
-  implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation 'com.monri:monri-android:3.0.+'
-  implementation 'androidx.preference:preference:1.1.1'
+  implementation "com.google.android.gms:play-services-wallet:19.4.0"
+  implementation "com.facebook.react:react-android:0.80.0"
+  implementation 'com.monri:monri-android:3.1.+'
+  implementation 'androidx.preference:preference:1.2.1'
 }

@@ -1,42 +1,128 @@
 package com.reactnativemonriandroidios
 
+import android.app.Activity
+import android.app.Application
 import android.content.Context
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import androidx.activity.result.ActivityResultCaller
 import androidx.preference.PreferenceManager
 import com.facebook.react.bridge.*
+import com.monri.android.ActionResultConsumer
 import com.monri.android.Monri
 import com.monri.android.ResultCallback
+import com.monri.android.googlepay.GooglePayButtonOptions
 import com.monri.android.model.*
-import java.lang.Exception
 
 
-class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext), ResultCallback<PaymentResult> {
+class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext), ResultCallback<PaymentResult>, LifecycleEventListener {
 
-  private lateinit var monri: Monri
+  private var monri: Monri? = null
+  private lateinit var monriApiOptions: ReadableMap
   private lateinit var monriActivityListeners: MonriActivityEventListener
   private lateinit var confirmPaymentPromise: Promise
+  private var googlePayButtonOptions: GooglePayButtonOptions? = null
+  private var initializePromise: Promise? = null
+
+  private val lifecycleCallbacks = object : Application.ActivityLifecycleCallbacks {
+  override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+    tryInitMonri(activity)
+  }
+  override fun onActivityStarted(activity: Activity) { /* no-op */ }
+  override fun onActivityResumed(activity: Activity) { /* no-op */ }
+  override fun onActivityPaused(activity: Activity) { /* no-op */ }
+  override fun onActivityStopped(activity: Activity) { /* no-op */ }
+  override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) { /* no-op */ }
+  override fun onActivityDestroyed(activity: Activity) { /* no-op */ }
+}
+
+companion object {
+  private var activityResultCallerProvider: (() -> ActivityResultCaller?)? = null
+
+  fun registerActivityResultCaller(provider: () -> ActivityResultCaller?) {
+    activityResultCallerProvider = provider
+  }
+
+  internal fun provideActivityResultCaller(): ActivityResultCaller? {
+    val caller = activityResultCallerProvider?.invoke()
+    return caller
+  }
+}
+
+  init {
+    (reactContext.applicationContext as Application)
+        .registerActivityLifecycleCallbacks(lifecycleCallbacks)
+
+    if (reactContext.currentActivity != null) {
+      tryInitMonri(reactContext.currentActivity!!)
+    }
+  }
 
   override fun getName(): String {
     return "MonriAndroidIos"
   }
 
+  private fun tryInitMonri(activity: Activity) {
+    if (monri != null) {
+      return
+    }
+
+    writeMetaData(this.reactApplicationContext, String.format("Android-SDK:ReactNative:%s", BuildConfig.MONRI_REACT_NATIVE_PLUGIN_VERSION))
+    try {
+      this.monri = Monri(reactApplicationContext as ActivityResultCaller)
+    } catch (t: Throwable) {
+      return
+    }
+    val monri = this.monri ?: throw Exception("Monri is not initialized in initializer")
+    this.monriActivityListeners = MonriActivityEventListener(monri, this)
+
+    reactApplicationContext.addActivityEventListener(monriActivityListeners)
+    initializePromise?.resolve(null)
+    initializePromise = null
+  }
+
+  @ReactMethod
+  fun initialize(monriApiOptions: ReadableMap, promise: Promise) {
+    this.monriApiOptions = monriApiOptions
+    this.initializePromise = promise
+    val activity = reactApplicationContext.currentActivity ?: return
+    tryInitMonri(activity)
+  }
+
   @ReactMethod
   fun confirmPayment(monriApiOptions: ReadableMap, params: ReadableMap, promise: Promise) {
-
     try {
-      val options = parseMonriApiOptions(monriApiOptions)
       val confirmPaymentParams = parseConfirmPaymentParams(params)
+      val monri = this.monri ?: throw Exception("Monri is not initialized in confirmPayment")
 
-      writeMetaData(this.reactApplicationContext, String.format("Android-SDK:ReactNative:%s", BuildConfig.MONRI_REACT_NATIVE_PLUGIN_VERSION))
-
-      this.monri = Monri(reactApplicationContext, options)
-      this.monriActivityListeners = MonriActivityEventListener(monri, this)
-      this.confirmPaymentPromise = promise
-
-      reactApplicationContext.addActivityEventListener(monriActivityListeners)
-
-      monri.confirmPayment(reactApplicationContext.currentActivity,
-        confirmPaymentParams
+      monri.setMonriApiOptions(
+        parseMonriApiOptions(monriApiOptions)
       )
+
+      val paymentCallback =
+        ActionResultConsumer<PaymentResult> { paymentResult, throwable ->
+          if (throwable != null) {
+            this.onError(throwable)
+          } else if (paymentResult != null) {
+            this.onSuccess(paymentResult)
+          } else {
+            this.onError(Exception("Unknown error occurred during payment."))
+          }
+        }
+
+      if(getRequiredString(params, "type") == "googlePay") {
+        monri.confirmPayment(
+          confirmPaymentParams,
+          paymentCallback,
+          googlePayButtonOptions
+        )
+      } else {
+        monri.confirmPayment(
+          confirmPaymentParams,
+          paymentCallback
+        )
+      }
     } catch (e: Exception) {
       promise.reject(e)
     }
@@ -49,6 +135,9 @@ class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContex
       ?: throw RequiredAttributeException("params.transaction is missing")
 
     val paymentMethodParams = (when {
+      params.hasKey("googlePayButtonOptions") -> {
+        params.getMap("googlePayButtonOptions") ?: throw RequiredAttributeException("googlePay button options missing")
+      }
       params.hasKey("card") -> {
         params.getMap("card") ?: throw RequiredAttributeException("params.card is missing")
       }
@@ -57,7 +146,7 @@ class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContex
           ?: throw RequiredAttributeException("params.savedCard is missing")
       }
       else -> {
-        throw RequiredAttributeException("params.card or params.savedCard is missing")
+        throw RequiredAttributeException("params.card or params.savedCard is missing, or googlePayButtonOptions is missing")
       }
     })
 
@@ -71,6 +160,16 @@ class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContex
       .setEmail(getNullableString(transactionParams, "email"))
 
     val paymentMethod: PaymentMethodParams = when {
+      getRequiredString(params, "type") == "googlePay" -> {
+        val payment = GooglePayPayment(GooglePayPayment.Provider.GOOGLE_PAY)
+        googlePayButtonOptions = GooglePayButtonOptions(
+          getRequiredInt(paymentMethodParams, "type"),
+          getRequiredInt(paymentMethodParams, "theme"),
+          getRequiredInt(paymentMethodParams, "borderRadius")
+        )
+
+        payment.toPaymentMethodParams()
+      }
       params.hasKey("savedCard") -> {
         SavedCard(getRequiredString(paymentMethodParams, "panToken"), getRequiredString(paymentMethodParams, "cvv")).toPaymentMethodParams()
       }
@@ -215,6 +314,22 @@ class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContex
     }
   }
 
+  override fun onHostResume() {
+    // no-op
+  }
+
+  override fun onHostPause() {
+    if (this::monriActivityListeners.isInitialized) {
+      this.reactApplicationContext.removeActivityEventListener(monriActivityListeners)
+    }
+  }
+
+  override fun onHostDestroy() {
+    if (this::monriActivityListeners.isInitialized) {
+      this.reactApplicationContext.removeActivityEventListener(monriActivityListeners)
+    }
+    monri = null
+  }
 
 }
 

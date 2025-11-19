@@ -1,12 +1,25 @@
 import * as React from 'react';
-import { StyleSheet, View, Text, Button, Platform } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  Platform,
+  TouchableOpacity,
+} from 'react-native';
 import MonriAndroidIos from 'react-native-monri-android-ios';
 import sha512 from 'crypto-js/sha512';
 
 export default function App() {
   const [result, setResult] = React.useState<string | undefined>();
 
-  const key = 'your_key_here';
+  React.useEffect(() => {
+    MonriAndroidIos.initialize({
+      authenticityToken,
+      developmentMode: true,
+    });
+  }, []);
+
+  const key = 'your_secret_key_here';
   const authenticityToken = 'your_authenticity_token_here';
   const applePayMerchantID = 'your_apple_pay_merchant_id_here';
 
@@ -47,6 +60,43 @@ export default function App() {
       throw new Error('Server returned non-JSON response.');
     }
   }, [authenticityToken, key]);
+
+  async function payWithGooglePay() {
+    try {
+      if (Platform.OS !== 'android') {
+        throw new Error('Google Pay is only available on Android devices.');
+      }
+      const clientSecret = await createPaymentSession();
+      const response = await MonriAndroidIos.confirmPayment(
+        {
+          authenticityToken,
+          developmentMode: true,
+        },
+        {
+          type: 'googlePay',
+          googlePayButtonOptions: {
+            type: 1,
+            theme: 1,
+            borderRadius: 8,
+          },
+          clientSecret,
+          transaction: {
+            fullName: 'React Native',
+            address: 'Laticka',
+            city: 'Sarajevo',
+            zip: '71210',
+            phone: '061123213',
+            country: 'BA',
+            email: 'react.native@monri.com',
+            orderInfo: 'Monri React Native Google Pay Test',
+          },
+        }
+      );
+      setResult(JSON.stringify(response));
+    } catch (error) {
+      setResult(String(error));
+    }
+  }
 
   async function payWithApplePay() {
     try {
@@ -121,20 +171,35 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <Text style={{ color: '#ffffff' }}>Result: {result}</Text>
+      <Text style={{ color: Platform.OS === 'ios' ? '#ffffff' : '#000000' }}>
+        Result: {result}
+      </Text>
 
-      <Button
-        onPress={payWithApplePay}
-        title="Pay with Apple Pay"
-        color="#841584"
-      />
-
-      <Button
+      <TouchableOpacity
+        onPress={Platform.OS === 'ios' ? payWithApplePay : payWithGooglePay}
+        style={{
+          backgroundColor: '#841584',
+          paddingVertical: 12,
+          paddingHorizontal: 24,
+          borderRadius: 8,
+        }}
+      >
+        <Text style={{ color: '#ffffff', fontSize: 18 }}>
+          {Platform.OS === 'ios' ? 'Pay with Apple Pay' : 'Pay with Google Pay'}
+        </Text>
+      </TouchableOpacity>
+      <View style={{ height: 20 }} />
+      <TouchableOpacity
         onPress={onPressLearnMore}
-        title="Start payment"
-        color="#841584"
-        accessibilityLabel="Learn more about this purple button"
-      />
+        style={{
+          backgroundColor: '#841584',
+          paddingVertical: 12,
+          paddingHorizontal: 24,
+          borderRadius: 8,
+        }}
+      >
+        <Text style={{ color: '#ffffff', fontSize: 18 }}>Pay with Card</Text>
+      </TouchableOpacity>
     </View>
   );
 }
