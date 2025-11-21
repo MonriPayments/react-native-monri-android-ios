@@ -1,12 +1,10 @@
+// android/src/main/java/com/reactnativemonriandroidios/MonriAndroidIosModule.kt
 package com.reactnativemonriandroidios
 
 import android.app.Activity
-import android.app.Application
 import android.content.Context
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import androidx.activity.result.ActivityResultCaller
+import com.reactnativemonriandroidios.MonriConstants
 import androidx.preference.PreferenceManager
 import com.facebook.react.bridge.*
 import com.monri.android.ActionResultConsumer
@@ -15,88 +13,75 @@ import com.monri.android.ResultCallback
 import com.monri.android.googlepay.GooglePayButtonOptions
 import com.monri.android.model.*
 
-
-class MonriAndroidIosModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext), ResultCallback<PaymentResult>, LifecycleEventListener {
+class MonriAndroidIosModule(
+  reactContext: ReactApplicationContext
+) : ReactContextBaseJavaModule(reactContext),
+    ResultCallback<PaymentResult>,
+    LifecycleEventListener {
 
   private var monri: Monri? = null
-  private lateinit var monriApiOptions: ReadableMap
+
   private lateinit var monriActivityListeners: MonriActivityEventListener
   private lateinit var confirmPaymentPromise: Promise
   private var googlePayButtonOptions: GooglePayButtonOptions? = null
   private var initializePromise: Promise? = null
 
-  private val lifecycleCallbacks = object : Application.ActivityLifecycleCallbacks {
-  override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-    tryInitMonri(activity)
-  }
-  override fun onActivityStarted(activity: Activity) { /* no-op */ }
-  override fun onActivityResumed(activity: Activity) { /* no-op */ }
-  override fun onActivityPaused(activity: Activity) { /* no-op */ }
-  override fun onActivityStopped(activity: Activity) { /* no-op */ }
-  override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) { /* no-op */ }
-  override fun onActivityDestroyed(activity: Activity) { /* no-op */ }
-}
 
-companion object {
-  private var activityResultCallerProvider: (() -> ActivityResultCaller?)? = null
+  companion object {
+    private var monriInstanceFromActivity: Monri? = null
 
-  fun registerActivityResultCaller(provider: () -> ActivityResultCaller?) {
-    activityResultCallerProvider = provider
-  }
-
-  internal fun provideActivityResultCaller(): ActivityResultCaller? {
-    val caller = activityResultCallerProvider?.invoke()
-    return caller
-  }
-}
-
-  init {
-    (reactContext.applicationContext as Application)
-        .registerActivityLifecycleCallbacks(lifecycleCallbacks)
-
-    if (reactContext.currentActivity != null) {
-      tryInitMonri(reactContext.currentActivity!!)
+    fun setMonriInstance(instance: Monri) {
+      monriInstanceFromActivity = instance
     }
   }
 
-  override fun getName(): String {
-    return "MonriAndroidIos"
+  init {
+    reactContext.addLifecycleEventListener(this)
   }
 
-  private fun tryInitMonri(activity: Activity) {
+  override fun getName(): String = MonriConstants.MODULE_NAME
+
+  private fun tryInitMonri() {
     if (monri != null) {
       return
     }
 
-    writeMetaData(this.reactApplicationContext, String.format("Android-SDK:ReactNative:%s", BuildConfig.MONRI_REACT_NATIVE_PLUGIN_VERSION))
-    try {
-      this.monri = Monri(reactApplicationContext as ActivityResultCaller)
-    } catch (t: Throwable) {
-      return
-    }
-    val monri = this.monri ?: throw Exception("Monri is not initialized in initializer")
-    this.monriActivityListeners = MonriActivityEventListener(monri, this)
+    val existing = monriInstanceFromActivity
+      ?: throw IllegalStateException(MonriConstants.ERROR_MONRI_NOT_INITIALIZED)
+
+    writeMetaData(
+      reactApplicationContext,
+      String.format(
+        MonriConstants.META_LIBRARY_VALUE_FORMAT,
+        BuildConfig.MONRI_REACT_NATIVE_PLUGIN_VERSION
+      )
+    )
+
+    this.monri = existing
+    this.monriActivityListeners = MonriActivityEventListener(existing, this)
 
     reactApplicationContext.addActivityEventListener(monriActivityListeners)
+
     initializePromise?.resolve(null)
     initializePromise = null
   }
 
   @ReactMethod
-  fun initialize(monriApiOptions: ReadableMap, promise: Promise) {
-    this.monriApiOptions = monriApiOptions
-    this.initializePromise = promise
-    val activity = reactApplicationContext.currentActivity ?: return
-    tryInitMonri(activity)
-  }
-
-  @ReactMethod
   fun confirmPayment(monriApiOptions: ReadableMap, params: ReadableMap, promise: Promise) {
-    try {
-      val confirmPaymentParams = parseConfirmPaymentParams(params)
-      val monri = this.monri ?: throw Exception("Monri is not initialized in confirmPayment")
 
-      monri.setMonriApiOptions(
+    if (this.monri == null) {
+      this.initializePromise = promise
+      tryInitMonri()
+    }
+
+    try {
+      val monriInstance = this.monri ?: throw Exception(MonriConstants.ERROR_MONRI_NOT_INITIALIZED_PAYMENT)
+
+      this.confirmPaymentPromise = promise
+
+      val confirmPaymentParams = parseConfirmPaymentParams(params)
+
+      monriInstance.setMonriApiOptions(
         parseMonriApiOptions(monriApiOptions)
       )
 
@@ -107,18 +92,18 @@ companion object {
           } else if (paymentResult != null) {
             this.onSuccess(paymentResult)
           } else {
-            this.onError(Exception("Unknown error occurred during payment."))
+            this.onError(Exception(MonriConstants.ERROR_UNKNOWN))
           }
         }
 
-      if(getRequiredString(params, "type") == "googlePay") {
-        monri.confirmPayment(
+      if (getRequiredString(params, MonriConstants.KEY_TYPE) == MonriConstants.TYPE_GOOGLE_PAY) {
+        monriInstance.confirmPayment(
           confirmPaymentParams,
           paymentCallback,
           googlePayButtonOptions
         )
       } else {
-        monri.confirmPayment(
+        monriInstance.confirmPayment(
           confirmPaymentParams,
           paymentCallback
         )
@@ -126,65 +111,74 @@ companion object {
     } catch (e: Exception) {
       promise.reject(e)
     }
-
   }
 
   private fun parseConfirmPaymentParams(params: ReadableMap): ConfirmPaymentParams {
-    val clientSecret = getRequiredString(params, "clientSecret")
-    val transactionParams = params.getMap("transaction")
-      ?: throw RequiredAttributeException("params.transaction is missing")
+    val clientSecret = getRequiredString(params, MonriConstants.KEY_CLIENT_SECRET)
+    val transactionParams = params.getMap(MonriConstants.KEY_TRANSACTION)
+      ?: throw RequiredAttributeException(MonriConstants.ERROR_TRANSACTION_MISSING)
 
-    val paymentMethodParams = (when {
-      params.hasKey("googlePayButtonOptions") -> {
-        params.getMap("googlePayButtonOptions") ?: throw RequiredAttributeException("googlePay button options missing")
+    val paymentMethodParams = when {
+      params.hasKey(MonriConstants.KEY_GOOGLE_PAY_BUTTON_OPTIONS) -> {
+        params.getMap(MonriConstants.KEY_GOOGLE_PAY_BUTTON_OPTIONS)
+          ?: throw RequiredAttributeException(MonriConstants.ERROR_GOOGLE_PAY_OPTIONS_MISSING)
       }
-      params.hasKey("card") -> {
-        params.getMap("card") ?: throw RequiredAttributeException("params.card is missing")
+      params.hasKey(MonriConstants.KEY_CARD) -> {
+        params.getMap(MonriConstants.KEY_CARD)
+          ?: throw RequiredAttributeException(MonriConstants.ERROR_CARD_MISSING)
       }
-      params.hasKey("savedCard") -> {
-        params.getMap("savedCard")
-          ?: throw RequiredAttributeException("params.savedCard is missing")
+      params.hasKey(MonriConstants.KEY_SAVED_CARD) -> {
+        params.getMap(MonriConstants.KEY_SAVED_CARD)
+          ?: throw RequiredAttributeException(MonriConstants.ERROR_SAVED_CARD_MISSING)
       }
       else -> {
-        throw RequiredAttributeException("params.card or params.savedCard is missing, or googlePayButtonOptions is missing")
+        throw RequiredAttributeException(MonriConstants.ERROR_PAYMENT_METHOD_MISSING)
       }
-    })
+    }
 
     val customerParams = CustomerParams()
-      .setAddress(getNullableString(transactionParams, "address"))
-      .setFullName(getNullableString(transactionParams, "fullName"))
-      .setCity(getNullableString(transactionParams, "city"))
-      .setZip(getNullableString(transactionParams, "zip"))
-      .setPhone(getNullableString(transactionParams, "phone"))
-      .setCountry(getNullableString(transactionParams, "country"))
-      .setEmail(getNullableString(transactionParams, "email"))
+      .setAddress(getNullableString(transactionParams, MonriConstants.KEY_ADDRESS))
+      .setFullName(getNullableString(transactionParams, MonriConstants.KEY_FULL_NAME))
+      .setCity(getNullableString(transactionParams, MonriConstants.KEY_CITY))
+      .setZip(getNullableString(transactionParams, MonriConstants.KEY_ZIP))
+      .setPhone(getNullableString(transactionParams, MonriConstants.KEY_PHONE))
+      .setCountry(getNullableString(transactionParams, MonriConstants.KEY_COUNTRY))
+      .setEmail(getNullableString(transactionParams, MonriConstants.KEY_EMAIL))
 
     val paymentMethod: PaymentMethodParams = when {
-      getRequiredString(params, "type") == "googlePay" -> {
+      getRequiredString(params, MonriConstants.KEY_TYPE) == MonriConstants.TYPE_GOOGLE_PAY -> {
         val payment = GooglePayPayment(GooglePayPayment.Provider.GOOGLE_PAY)
         googlePayButtonOptions = GooglePayButtonOptions(
-          getRequiredInt(paymentMethodParams, "type"),
-          getRequiredInt(paymentMethodParams, "theme"),
-          getRequiredInt(paymentMethodParams, "borderRadius")
+          getRequiredInt(paymentMethodParams, MonriConstants.KEY_TYPE),
+          getRequiredInt(paymentMethodParams, MonriConstants.KEY_THEME),
+          getRequiredInt(paymentMethodParams, MonriConstants.KEY_BORDER_RADIUS)
         )
-
         payment.toPaymentMethodParams()
       }
-      params.hasKey("savedCard") -> {
-        SavedCard(getRequiredString(paymentMethodParams, "panToken"), getRequiredString(paymentMethodParams, "cvv")).toPaymentMethodParams()
+      params.hasKey(MonriConstants.KEY_SAVED_CARD) -> {
+        SavedCard(
+          getRequiredString(paymentMethodParams, MonriConstants.KEY_PAN_TOKEN),
+          getRequiredString(paymentMethodParams, MonriConstants.KEY_CVV)
+        ).toPaymentMethodParams()
       }
-      params.hasKey("card") -> {
-        val card = Card(getRequiredString(paymentMethodParams, "pan"), getRequiredInt(paymentMethodParams, "expiryMonth"), getRequiredInt(paymentMethodParams, "expiryYear"), getRequiredString(paymentMethodParams, "cvv"))
+      params.hasKey(MonriConstants.KEY_CARD) -> {
+        val card = Card(
+          getRequiredString(paymentMethodParams, MonriConstants.KEY_PAN),
+          getRequiredInt(paymentMethodParams, MonriConstants.KEY_EXPIRY_MONTH),
+          getRequiredInt(paymentMethodParams, MonriConstants.KEY_EXPIRY_YEAR),
+          getRequiredString(paymentMethodParams, MonriConstants.KEY_CVV)
+        )
 
-        card.isTokenizePan = if (paymentMethodParams.hasKey("saveCard")) {
-          paymentMethodParams.getBoolean("saveCard")
+        card.isTokenizePan = if (paymentMethodParams.hasKey(MonriConstants.KEY_SAVE_CARD)) {
+          paymentMethodParams.getBoolean(MonriConstants.KEY_SAVE_CARD)
         } else {
           false
         }
+
         card.toPaymentMethodParams()
       }
       else -> {
-        throw RequiredAttributeException("params.card or params.savedCard is missing")
+        throw RequiredAttributeException(MonriConstants.ERROR_PAYMENT_METHOD_MISSING)
       }
     }
 
@@ -193,27 +187,26 @@ companion object {
       paymentMethod,
       TransactionParams.create()
         .set(customerParams)
-        .set("order_info", transactionParams.getString("orderInfo"))
+        .set(MonriConstants.KEY_ORDER_INFO, transactionParams.getString(MonriConstants.KEY_ORDER_INFO))
     )
-
   }
 
   private fun parseMonriApiOptions(params: ReadableMap): MonriApiOptions {
     return MonriApiOptions(
-      getRequiredString(params, "authenticityToken"),
-      if (params.hasKey("developmentMode")) {
-        params.getBoolean("developmentMode")
+      getRequiredString(params, MonriConstants.KEY_AUTHENTICITY_TOKEN),
+      if (params.hasKey(MonriConstants.KEY_DEVELOPMENT_MODE)) {
+        params.getBoolean(MonriConstants.KEY_DEVELOPMENT_MODE)
       } else {
         false
       }
     )
   }
 
-  private fun getRequiredString(params: ReadableMap,
-                                key: String,
-                                defaultValue: String? = null
+  private fun getRequiredString(
+    params: ReadableMap,
+    key: String,
+    defaultValue: String? = null
   ): String {
-
     return (if (params.hasKey(key)) {
       params.getString(key)
     } else {
@@ -221,11 +214,11 @@ companion object {
     }) ?: throw RequiredAttributeException("Missing attribute $key")
   }
 
-  private fun getRequiredInt(params: ReadableMap,
-                             key: String,
-                             defaultValue: Int? = null
+  private fun getRequiredInt(
+    params: ReadableMap,
+    key: String,
+    defaultValue: Int? = null
   ): Int {
-
     return (if (params.hasKey(key)) {
       params.getInt(key)
     } else {
@@ -233,11 +226,11 @@ companion object {
     }) ?: throw RequiredAttributeException("Missing attribute $key")
   }
 
-  private fun getNullableString(params: ReadableMap,
-                                key: String,
-                                defaultValue: String? = null
+  private fun getNullableString(
+    params: ReadableMap,
+    key: String,
+    defaultValue: String? = null
   ): String? {
-
     return (if (params.hasKey(key)) {
       params.getString(key)
     } else {
@@ -245,9 +238,7 @@ companion object {
     })
   }
 
-
   override fun onSuccess(paymentResult: PaymentResult) {
-
     if (this::monriActivityListeners.isInitialized) {
       this.reactApplicationContext.removeActivityEventListener(monriActivityListeners)
     }
@@ -255,35 +246,30 @@ companion object {
     if (this::confirmPaymentPromise.isInitialized) {
       val result = WritableNativeMap()
 
-      result.putValueOrNull("status", paymentResult.status)
-      result.putValueOrNull("currency", paymentResult.currency)
-      result.putValueOrNull("amount", paymentResult.amount)
-      result.putValueOrNull("orderNumber", paymentResult.orderNumber)
-      result.putValueOrNull("panToken", paymentResult.panToken)
-      result.putValueOrNull("createdAt", paymentResult.createdAt)
-      result.putValueOrNull("transactionType", paymentResult.transactionType)
+      result.putValueOrNull(MonriConstants.KEY_STATUS, paymentResult.status)
+      result.putValueOrNull(MonriConstants.KEY_CURRENCY, paymentResult.currency)
+      result.putValueOrNull(MonriConstants.KEY_AMOUNT, paymentResult.amount)
+      result.putValueOrNull(MonriConstants.KEY_ORDER_NUMBER, paymentResult.orderNumber)
+      result.putValueOrNull(MonriConstants.KEY_PAN_TOKEN, paymentResult.panToken)
+      result.putValueOrNull(MonriConstants.KEY_CREATED_AT, paymentResult.createdAt)
+      result.putValueOrNull(MonriConstants.KEY_TRANSACTION_TYPE, paymentResult.transactionType)
 
       if (paymentResult.paymentMethod != null) {
         val savedCard = paymentResult.paymentMethod as SavedCardPaymentMethod
         val paymentMethod = WritableNativeMap()
         val paymentMethodData = WritableNativeMap()
-        paymentMethod.putValueOrNull("type", savedCard.type)
 
+        paymentMethod.putValueOrNull(MonriConstants.KEY_TYPE, savedCard.type)
 
-        paymentMethodData.putValueOrNull("brand", savedCard.data!!.brand)
-        paymentMethodData.putValueOrNull("expirationDate", savedCard.data!!.expirationDate)
-        paymentMethodData.putValueOrNull("issuer", savedCard.data!!.issuer)
-        paymentMethodData.putValueOrNull("masked", savedCard.data!!.masked)
-        paymentMethodData.putValueOrNull("token", savedCard.data!!.token)
+        paymentMethodData.putValueOrNull(MonriConstants.KEY_BRAND, savedCard.data!!.brand)
+        paymentMethodData.putValueOrNull(MonriConstants.KEY_EXPIRATION_DATE, savedCard.data!!.expirationDate)
+        paymentMethodData.putValueOrNull(MonriConstants.KEY_ISSUER, savedCard.data!!.issuer)
+        paymentMethodData.putValueOrNull(MonriConstants.KEY_MASKED, savedCard.data!!.masked)
+        paymentMethodData.putValueOrNull(MonriConstants.KEY_TOKEN, savedCard.data!!.token)
 
-        paymentMethod.putMap("data", paymentMethodData)
+        paymentMethod.putMap(MonriConstants.KEY_DATA, paymentMethodData)
 
-        result.putMap("paymentMethod", paymentMethod)
-
-      }
-
-      if (paymentResult.panToken != null) {
-        result.putValueOrNull("panToken", paymentResult.panToken)
+        result.putMap(MonriConstants.KEY_PAYMENT_METHOD, paymentMethod)
       }
 
       if (paymentResult.errors != null) {
@@ -291,14 +277,10 @@ companion object {
         paymentResult.errors!!.forEach { err ->
           errors.pushString(err)
         }
-
-        result.putArray("errors", errors)
+        result.putArray(MonriConstants.KEY_ERRORS, errors)
       } else {
-        result.putArray("errors", WritableNativeArray())
+        result.putArray(MonriConstants.KEY_ERRORS, WritableNativeArray())
       }
-
-
-      // TODO: add payment method support
 
       confirmPaymentPromise.resolve(result)
     }
@@ -309,13 +291,13 @@ companion object {
       this.reactApplicationContext.removeActivityEventListener(monriActivityListeners)
     }
     if (this::confirmPaymentPromise.isInitialized) {
-      val error = throwable ?: Exception("Unknown error occurred")
+      val error = throwable ?: Exception(MonriConstants.ERROR_UNKNOWN_PAYMENT)
       this.confirmPaymentPromise.reject(error)
     }
   }
 
   override fun onHostResume() {
-    // no-op
+    /* no-op */
   }
 
   override fun onHostPause() {
@@ -331,11 +313,16 @@ companion object {
     monri = null
   }
 
+  private fun writeMetaData(context: Context, library: String) {
+    val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+    sharedPreferences
+      .edit()
+      .putString(MonriConstants.META_LIBRARY_KEY, library)
+      .apply()
+  }
 }
 
-private class RequiredAttributeException(message: String) : IllegalArgumentException(message) {
-
-}
+private class RequiredAttributeException(message: String) : IllegalArgumentException(message)
 
 private fun WritableNativeMap.putValueOrNull(key: String, value: Int?) {
   if (value == null) {
@@ -351,9 +338,4 @@ private fun WritableNativeMap.putValueOrNull(key: String, value: String?) {
   } else {
     this.putString(key, value)
   }
-}
-
-private fun MonriAndroidIosModule.writeMetaData(context: Context, library: String) {
-  val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-  sharedPreferences.edit().putString("com.monri.meta.library", library).apply()
 }
