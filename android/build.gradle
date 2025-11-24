@@ -5,7 +5,9 @@ buildscript {
   repositories {
     google()
     mavenCentral()
-    maven { url 'https://jitpack.io' }
+    maven { 
+      url 'https://jitpack.io' 
+    }
   }
   dependencies {
     classpath "com.android.tools.build:gradle:8.5.2"
@@ -71,7 +73,9 @@ android {
 repositories {
   google()
   mavenCentral()
-  maven { url 'https://jitpack.io' }
+  maven { 
+    url 'https://jitpack.io' 
+  }
 
   def found = false
   def defaultDir
@@ -84,7 +88,10 @@ repositories {
   }
 
   if (defaultDir.exists()) {
-    maven { url defaultDir.toString(); name androidSourcesName }
+    maven { 
+      url defaultDir.toString(); 
+      name androidSourcesName 
+    }
     logger.info(":${project.name}:reactNativeAndroidRoot ${defaultDir.canonicalPath}")
     found = true
   } else {
@@ -97,11 +104,17 @@ repositories {
       def androidPrebuiltBinaryDir = new File(parentDir, 'node_modules/react-native/android')
 
       if (androidPrebuiltBinaryDir.exists()) {
-        maven { url androidPrebuiltBinaryDir.toString(); name androidSourcesName }
+        maven { 
+          url androidPrebuiltBinaryDir.toString(); 
+          name androidSourcesName 
+        }
         logger.info(":${project.name}:reactNativeAndroidRoot ${androidPrebuiltBinaryDir.canonicalPath}")
         found = true
       } else if (androidSourcesDir.exists()) {
-        maven { url androidSourcesDir.toString(); name androidSourcesName }
+        maven { 
+          url androidSourcesDir.toString(); 
+          name androidSourcesName 
+        }
         logger.info(":${project.name}:reactNativeAndroidRoot ${androidSourcesDir.canonicalPath}")
         found = true
       }
@@ -116,6 +129,6 @@ repositories {
 dependencies {
   implementation "com.google.android.gms:play-services-wallet:19.4.0"
   implementation "com.facebook.react:react-android:0.80.0"
-  implementation 'com.monri:monri-android:3.1.+'
+  implementation 'com.monri:monri-android:3.1.1'
   implementation 'androidx.preference:preference:1.2.1'
 }
