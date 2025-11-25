@@ -11,6 +11,26 @@ export type SavedPaymentMethod = {
   data: { [id: string]: any };
 };
 
+/**
+ * Google Pay button options
+ * type: Button type (1-8):
+ * 1 - Buy
+ * 2 - Book
+ * 3 - Checkout
+ * 4 - Donate
+ * 5 - Order
+ * 6 - Pay
+ * 7 - Subscribe
+ * 8 - Plain
+ */
+export type GooglePayButtonOptions = {
+  type: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+  theme: ButtonTheme;
+  borderRadius?: number;
+};
+
+export type ButtonTheme = 1 | 2;
+
 export type PaymentResult = {
   status: string;
   currency?: string;
@@ -53,11 +73,13 @@ export type ConfirmPaymentParams = {
   card?: Card;
   savedCard?: SavedCard;
   transaction: Transaction;
+  googlePayButtonOptions?: GooglePayButtonOptions;
   pkPaymentButtonType?: number | null;
   pkPaymentButtonStyle?: number | null;
 };
 
 type MonriAndroidIosType = {
+  initialize(options: MonriApiOptions): Promise<void>;
   confirmPayment(
     options: MonriApiOptions,
     params: ConfirmPaymentParams
