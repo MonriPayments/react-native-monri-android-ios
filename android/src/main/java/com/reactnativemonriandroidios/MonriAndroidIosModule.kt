@@ -21,7 +21,7 @@ class MonriAndroidIosModule(
   private var googlePayButtonOptions: GooglePayButtonOptions? = null
 
   companion object {
-    private var monriInstanceFromActivity: Monri? = null
+    private lateinit var monriInstanceFromActivity: Monri
 
     fun setMonriInstance(instance: Monri) {
       monriInstanceFromActivity = instance
@@ -34,14 +34,21 @@ class MonriAndroidIosModule(
 
   override fun getName(): String = MonriConstants.MODULE_NAME
 
-  private fun tryInitMonri() {
-    if (monri != null) {
-      return
+  @ReactMethod
+  fun initMonri(promise: Promise) {
+    try {
+      if (!this::monri.isInitialized) {
+        tryInitMonri()
+      }
+    } catch (e: Exception) {
+      promise.reject(e)
     }
+  }
+
+  private fun tryInitMonri() {
 
     val existing = monriInstanceFromActivity
-      ?: throw IllegalStateException(MonriConstants.ERROR_MONRI_NOT_INITIALIZED)
-
+    
     writeMetaData(
       reactApplicationContext,
       String.format(
@@ -53,17 +60,18 @@ class MonriAndroidIosModule(
     this.monri = existing
     this.monriActivityListeners = MonriActivityEventListener(existing, this)
 
+    if (!this::monri.isInitialized) {
+      throw Exception("Monri SDK is not initialized. Make sure to initialize it in MainActivity.")
+    }
+
     reactApplicationContext.addActivityEventListener(monriActivityListeners)
   }
 
   @ReactMethod
   fun confirmPayment(monriApiOptions: ReadableMap, params: ReadableMap, promise: Promise) {
     try {
-      if (this.monri == null) {
-        tryInitMonri()
-      }
 
-      val monriInstance = this.monri ?: throw Exception(MonriConstants.ERROR_MONRI_NOT_INITIALIZED_PAYMENT)
+      val monriInstance = this.monri
 
       this.confirmPaymentPromise = promise
 
@@ -138,7 +146,6 @@ class MonriAndroidIosModule(
     if (this::monriActivityListeners.isInitialized) {
       this.reactApplicationContext.removeActivityEventListener(monriActivityListeners)
     }
-    monri = null
   }
 
   private fun writeMetaData(context: Context, library: String) {
