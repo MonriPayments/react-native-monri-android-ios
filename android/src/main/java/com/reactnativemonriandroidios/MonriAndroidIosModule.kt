@@ -22,6 +22,8 @@ class MonriAndroidIosModule(
 
   companion object {
     private lateinit var monriInstanceFromActivity: Monri
+    private val isInitialized: Boolean
+      get() = this::monriInstanceFromActivity.isInitialized
 
     fun setMonriInstance(instance: Monri) {
       monriInstanceFromActivity = instance
@@ -34,19 +36,11 @@ class MonriAndroidIosModule(
 
   override fun getName(): String = MonriConstants.MODULE_NAME
 
-  @ReactMethod
-  fun initMonri(promise: Promise) {
-    try {
-      if (!this::monri.isInitialized) {
-        tryInitMonri()
-      }
-    } catch (e: Exception) {
-      promise.reject(e)
-    }
-  }
-
   private fun tryInitMonri() {
 
+    if (!isInitialized) {
+      throw Exception("Monri instance is not initialized. Make sure to initialize Monri in MainActivity.")
+    }
     val existing = monriInstanceFromActivity
     
     writeMetaData(
@@ -60,10 +54,6 @@ class MonriAndroidIosModule(
     this.monri = existing
     this.monriActivityListeners = MonriActivityEventListener(existing, this)
 
-    if (!this::monri.isInitialized) {
-      throw Exception("Monri SDK is not initialized. Make sure to initialize it in MainActivity.")
-    }
-
     reactApplicationContext.addActivityEventListener(monriActivityListeners)
   }
 
@@ -71,7 +61,9 @@ class MonriAndroidIosModule(
   fun confirmPayment(monriApiOptions: ReadableMap, params: ReadableMap, promise: Promise) {
     try {
 
-      val monriInstance = this.monri
+      if (!this::monri.isInitialized) {
+        tryInitMonri()
+      }
 
       this.confirmPaymentPromise = promise
 
@@ -79,7 +71,7 @@ class MonriAndroidIosModule(
       val confirmPaymentParams = parseResult.params
       this.googlePayButtonOptions = parseResult.googlePayButtonOptions
 
-      monriInstance.setMonriApiOptions(
+      this.monri.setMonriApiOptions(
         MonriMapper.parseMonriApiOptions(monriApiOptions)
       )
 
@@ -96,16 +88,16 @@ class MonriAndroidIosModule(
 
       if (MonriMapper.parseConfirmPaymentParams(params).googlePayButtonOptions != null) {
          if (this.googlePayButtonOptions != null) {
-             monriInstance.confirmPayment(
+             this.monri.confirmPayment(
                  confirmPaymentParams,
                  paymentCallback,
                  this.googlePayButtonOptions
              )
          } else {
-             monriInstance.confirmPayment(confirmPaymentParams, paymentCallback)
+             this.monri.confirmPayment(confirmPaymentParams, paymentCallback)
          }
       } else {
-        monriInstance.confirmPayment(
+        this.monri.confirmPayment(
           confirmPaymentParams,
           paymentCallback
         )
