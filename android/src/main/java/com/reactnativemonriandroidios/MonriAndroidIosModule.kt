@@ -41,7 +41,6 @@ class MonriAndroidIosModule(
     if (!isInitialized) {
       throw Exception("Monri instance is not initialized. Make sure to initialize Monri in MainActivity.")
     }
-    val existing = monriInstanceFromActivity
     
     writeMetaData(
       reactApplicationContext,
@@ -50,9 +49,8 @@ class MonriAndroidIosModule(
         BuildConfig.MONRI_REACT_NATIVE_PLUGIN_VERSION
       )
     )
-
-    this.monri = existing
-    this.monriActivityListeners = MonriActivityEventListener(existing, this)
+    
+    this.monriActivityListeners = MonriActivityEventListener(this.monri, this)
 
     reactApplicationContext.addActivityEventListener(monriActivityListeners)
   }

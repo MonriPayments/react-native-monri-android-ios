@@ -12,10 +12,6 @@ import sha512 from 'crypto-js/sha512';
 export default function App() {
   const [result, setResult] = React.useState<string | undefined>();
 
-  React.useEffect(() => {
-    MonriAndroidIos.initMonri();
-  }, []);
-
   const key = 'key-e428ba618ebc232a595d0851398b8a5d';
   const authenticityToken = 'c6301017117302601b823874972a97acce96f2df';
   const applePayMerchantID = 'your_apple_pay_merchant_id_here';
