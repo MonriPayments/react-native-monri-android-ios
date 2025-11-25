@@ -15,7 +15,7 @@ class MonriAndroidIosModule(
     ResultCallback<PaymentResult>,
     LifecycleEventListener {
 
-  private var monri: Monri? = null
+  private lateinit var monri: Monri
   private lateinit var monriActivityListeners: MonriActivityEventListener
   private lateinit var confirmPaymentPromise: Promise
   private var googlePayButtonOptions: GooglePayButtonOptions? = null
