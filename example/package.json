@@ -6,7 +6,8 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
-    "start": "react-native start"
+    "start": "react-native start",
+    "bundle:ios": "react-native bundle --entry-file index.tsx --platform ios --dev false --bundle-output ios/main.jsbundle --assets-dest ios"
   },
   "dependencies": {
     "@types/crypto-js": "^4.2.2",
@@ -14,8 +15,8 @@
     "crypto-js": "^4.2.0",
     "react": "19.1.0",
     "react-native": "0.80.0",
-    "react-native-svg-transformer": "^1.5.1",
-    "react-native-monri-android-ios": "file:../"
+    "react-native-monri-android-ios": "file:../",
+    "react-native-svg-transformer": "^1.5.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

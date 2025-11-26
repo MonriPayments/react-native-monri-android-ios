@@ -2,6 +2,12 @@
 #
 .DS_Store
 
+#
+.github/
+
+#
+android/.settings/
+
 # XDE
 .expo/
 
@@ -64,3 +70,5 @@ lib/
 /package-lock.json
 /yarn.lock
 /example/ios/Podfile.lock
+android/java_pid19978.hprof
+android/java_pid20190.hprof
