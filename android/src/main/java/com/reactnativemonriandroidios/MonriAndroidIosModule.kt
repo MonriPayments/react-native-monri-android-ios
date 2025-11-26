@@ -49,7 +49,8 @@ class MonriAndroidIosModule(
         BuildConfig.MONRI_REACT_NATIVE_PLUGIN_VERSION
       )
     )
-    
+
+    this.monri = monriInstanceFromActivity
     this.monriActivityListeners = MonriActivityEventListener(this.monri, this)
 
     reactApplicationContext.addActivityEventListener(monriActivityListeners)
