@@ -7,7 +7,7 @@ const workspaceRoot = path.resolve(projectRoot, '..');
 const config = getDefaultConfig(projectRoot);
 
 // Allow Metro to watch files outside of the project root (i.e., your library's src folder)
-config.watchFolders = [workspaceRoot];
+config.watchFolders = [projectRoot, workspaceRoot];
 
 // Let Metro know where to resolve packages that are dependencies of your library
 config.resolver.nodeModulesPaths = [
