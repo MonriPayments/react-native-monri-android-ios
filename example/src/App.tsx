@@ -42,7 +42,7 @@ export default function App() {
 
   const { extract, isLoading, error, data } = useScanDoc();
 
-  const scandocUserKey = 'XCbnR54PAHma8hyBiP7J93xgzAHzAI';
+  const scandocUserKey = 'your-key';
   const scandocSubClient = 'react-native-monri-android-ios';
 
   const key = 'your_key_here';
