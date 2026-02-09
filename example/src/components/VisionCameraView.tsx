@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -9,22 +9,34 @@ import {
 } from 'react-native';
 import { Camera, useCameraDevice } from 'react-native-vision-camera';
 import RNFS from 'react-native-fs';
+import ImageResizer from 'react-native-image-resizer';
 
 type VisionCameraViewProps = {
   onCapture: (payload: { uri: string; base64: string }) => void;
   onClose: () => void;
   step?: 'front' | 'back';
+  autoCapture?: boolean;
+  autoCaptureDelayMs?: number;
+  showControls?: boolean;
+  feedbackText?: string;
+  showFeedback?: boolean;
 };
 
 const VisionCameraView: React.FC<VisionCameraViewProps> = ({
   onCapture,
   onClose,
   step,
+  autoCapture,
+  autoCaptureDelayMs,
+  showControls = true,
+  feedbackText = '',
+  showFeedback = true,
 }) => {
   const cameraRef = useRef<Camera | null>(null);
   const device = useCameraDevice('back');
   const [hasPermission, setHasPermission] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const hasAutoCapturedRef = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -33,20 +45,59 @@ const VisionCameraView: React.FC<VisionCameraViewProps> = ({
     })();
   }, []);
 
-  const takePicture = async () => {
+  const takePicture = useCallback(async () => {
     if (!cameraRef.current || isCapturing) return;
     setIsCapturing(true);
     try {
-      const photo = await cameraRef.current.takePhoto({});
-      const filePath = photo.path.startsWith('file://')
+      const photo = await cameraRef.current.takePhoto({
+        enableShutterSound: false,
+      });
+
+      const originalUri = photo.path.startsWith('file://')
         ? photo.path
         : `file://${photo.path}`;
-      const base64 = await RNFS.readFile(photo.path, 'base64');
-      onCapture({ uri: filePath, base64 });
+
+      // Resize the image before reading base64 to avoid OOM crashes.
+      // Target max dimension 1024px, JPEG at 50% quality keeps it well under 1 MB.
+      const resized = await ImageResizer.createResizedImage(
+        originalUri,
+        1024, // max width
+        1024, // max height
+        'JPEG',
+        50, // quality 0-100
+        0, // rotation
+        undefined, // outputPath (temp)
+        false, // keepMeta
+        { mode: 'contain', onlyScaleDown: true }
+      );
+
+      const resizedPath = resized.uri.startsWith('file://')
+        ? resized.uri.replace('file://', '')
+        : resized.path;
+      const base64 = await RNFS.readFile(resizedPath, 'base64');
+
+      // Clean up the temp resized file
+      RNFS.unlink(resizedPath).catch(() => {});
+
+      await onCapture({ uri: resized.uri, base64 });
+    } catch (err) {
+      console.error('Capture failed inside VisionCameraView:', err);
     } finally {
       setIsCapturing(false);
     }
-  };
+  }, [isCapturing, onCapture]);
+
+  useEffect(() => {
+    if (!autoCapture || !hasPermission || !device) return;
+    if (hasAutoCapturedRef.current) return;
+
+    const timeout = setTimeout(() => {
+      hasAutoCapturedRef.current = true;
+      takePicture();
+    }, autoCaptureDelayMs ?? 500);
+
+    return () => clearTimeout(timeout);
+  }, [autoCapture, autoCaptureDelayMs, device, hasPermission, takePicture]);
 
   if (!device) {
     return (
@@ -87,6 +138,7 @@ const VisionCameraView: React.FC<VisionCameraViewProps> = ({
         isActive={true}
         photo={true}
         audio={false}
+        photoQualityBalance="speed"
       />
 
       {!!step && (
@@ -97,22 +149,33 @@ const VisionCameraView: React.FC<VisionCameraViewProps> = ({
         </View>
       )}
 
-      <View style={styles.controls}>
-        <TouchableOpacity
-          onPress={takePicture}
-          style={styles.button}
-          disabled={isCapturing}
-        >
-          {isCapturing ? (
-            <ActivityIndicator />
-          ) : (
-            <Text style={styles.buttonText}>Take Photo</Text>
+      {showFeedback && (
+        <View style={styles.feedbackOverlay}>
+          <ActivityIndicator />
+          {!!feedbackText && (
+            <Text style={styles.feedbackText}>{feedbackText}</Text>
           )}
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onClose} style={styles.buttonSecondary}>
-          <Text style={styles.buttonTextSecondary}>Close</Text>
-        </TouchableOpacity>
-      </View>
+        </View>
+      )}
+
+      {showControls && (
+        <View style={styles.controls}>
+          <TouchableOpacity
+            onPress={takePicture}
+            style={styles.button}
+            disabled={isCapturing}
+          >
+            {isCapturing ? (
+              <ActivityIndicator />
+            ) : (
+              <Text style={styles.buttonText}>Take Photo</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onClose} style={styles.buttonSecondary}>
+            <Text style={styles.buttonTextSecondary}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 };
@@ -130,6 +193,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   overlayText: { color: '#fff', fontWeight: '700' },
+  feedbackOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#00000066',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  feedbackText: { color: '#fff', marginTop: 8, fontWeight: '600' },
   controls: {
     padding: 16,
     backgroundColor: '#000000aa',

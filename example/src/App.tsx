@@ -14,18 +14,22 @@ import sha512 from 'crypto-js/sha512';
 import VisionCameraView from './components/VisionCameraView';
 import { useScanDoc } from '../../src/hooks/useScanDoc';
 import {
-  validateCreditCardImage,
   type CreditCardExtractionRequest,
   type ScandocAuthRequest,
   type ValidationRequest,
   type ValidationResponse,
 } from '../../src/api';
 
-const cleanBase64 = (input: string) =>
-  input
-    .replace(/^data:image\/[a-zA-Z+]+;base64,/, '')
-    .replace(/\s/g, '')
-    .trim();
+const cleanBase64 = (input: string) => {
+  // RNFS usually returns clean base64. Checking for prefix is cheap.
+  if (input.startsWith('data:image')) {
+    return input
+      .replace(/^data:image\/[a-zA-Z+]+;base64,/, '')
+      .replace(/\s/g, '')
+      .trim();
+  }
+  return input; // Return original string ref if possible to save memory
+};
 
 type Mode = 'validation' | 'extraction';
 
@@ -39,10 +43,11 @@ export default function App() {
   const [lastValidation, setLastValidation] =
     React.useState<ValidationResponse | null>(null);
   const validationStreakRef = React.useRef(0);
+  const [isValidating, setIsValidating] = React.useState(false);
 
-  const { extract, isLoading, error, data } = useScanDoc();
+  const { extract, validate, isLoading, error, data } = useScanDoc();
 
-  const scandocUserKey = 'your-key';
+  const scandocUserKey = 'your_user_key_here';
   const scandocSubClient = 'react-native-monri-android-ios';
 
   const key = 'your_key_here';
@@ -204,93 +209,90 @@ export default function App() {
     return (
       <VisionCameraView
         step="front"
+        autoCapture={mode === 'validation'}
+        autoCaptureDelayMs={500}
+        showControls={mode !== 'validation'}
+        showFeedback={mode === 'validation' && isValidating}
+        feedbackText="Validating..."
         onClose={() => setShowCamera(false)}
         onCapture={async (payload) => {
-          setLastPhoto({ uri: payload.uri });
+          try {
+            setLastPhoto({ uri: payload.uri });
 
-          const cleanedImage = cleanBase64(payload.base64);
+            const cleanedImage = cleanBase64(payload.base64);
 
-          if (mode === 'validation') {
-            const validationPayload: ValidationRequest = {
-              AcceptTermsAndConditions: true,
-              Settings: {
-                SkipImageSizeCheck: true,
-              },
-              DataFields: {
-                Image: cleanedImage,
-                ImageType: 'base64',
-                ImageCropped: false,
-              },
+            const authCreds: ScandocAuthRequest = {
+              user_key: scandocUserKey,
+              sub_client: scandocSubClient,
             };
 
-            try {
-              const validationResult = await validateCreditCardImage(
-                validationPayload
+            if (mode === 'validation') {
+              const validationPayload: ValidationRequest = {
+                AcceptTermsAndConditions: true,
+                Settings: {
+                  SkipImageSizeCheck: true,
+                },
+                DataFields: {
+                  Images: [cleanedImage],
+                  ImageType: 'base64',
+                  ImageCropped: false,
+                },
+              };
+
+              setIsValidating(true);
+              console.warn('Calling validate()...');
+
+              const validationResult = await validate(
+                validationPayload,
+                authCreds
               );
+
               setLastValidation(validationResult);
               setValidationError(null);
-
-              if (validationResult.Validated) {
-                validationStreakRef.current += 1;
-              } else {
-                validationStreakRef.current = 0;
-              }
 
               if (validationResult.Errors?.length) {
                 setValidationError(validationResult.Errors.join(', '));
               }
 
-              if (validationStreakRef.current < 3) {
-                setValidationMessage(
-                  `Validation ${
-                    validationResult.Validated ? 'passed' : 'failed'
-                  } (${validationStreakRef.current}/3). Capture again.`
-                );
-                return;
-              }
-
               setValidationMessage(
-                'Validation passed 3 times. Ready for extraction.'
+                validationResult.Validated ? 'Validated.' : 'Not validated.'
               );
-              setResult('Validation passed 3 times. Ready for extraction.');
+              setResult(
+                `Validation result: ${JSON.stringify(validationResult)}`
+              );
+
               setShowCamera(false);
               validationStreakRef.current = 0;
-            } catch (e) {
-              setValidationError(String(e));
-              setValidationMessage('Validation error.');
+              return;
             }
 
-            return;
-          }
+            const scanPayload: CreditCardExtractionRequest = {
+              DataFields: {
+                Image: cleanedImage,
+                ImageType: 'base64',
+                ImageCropped: false,
+              },
+              Settings: {
+                ShouldReturnDocumentImage: false,
+                SkipDocumentSizeCheck: true,
+                SkipImageSizeCheck: true,
+                CanStoreImages: false,
+                DontUseValidation: false,
+              },
+              AcceptTermsAndConditions: true,
+            };
 
-          const scanPayload: CreditCardExtractionRequest = {
-            DataFields: {
-              Image: cleanedImage,
-              ImageType: 'base64',
-              ImageCropped: false,
-            },
-            Settings: {
-              ShouldReturnDocumentImage: false,
-              SkipDocumentSizeCheck: true,
-              SkipImageSizeCheck: true,
-              CanStoreImages: false,
-              DontUseValidation: false,
-            },
-            AcceptTermsAndConditions: true,
-          };
-
-          const authCreds: ScandocAuthRequest = {
-            user_key: scandocUserKey,
-            sub_client: scandocSubClient,
-          };
-
-          try {
             const scanResult = await extract(scanPayload, authCreds);
             setResult(`Scan success: ${JSON.stringify(scanResult)}`);
-          } catch (e) {
-            setResult(`Scan error: ${String(e)}`);
-          } finally {
             setShowCamera(false);
+          } catch (e) {
+            console.error('Error inside onCapture:', e);
+            setValidationError(String(e));
+            setValidationMessage('Error occurred');
+            setResult(`Error: ${String(e)}`);
+            setShowCamera(false);
+          } finally {
+            setIsValidating(false);
           }
         }}
       />

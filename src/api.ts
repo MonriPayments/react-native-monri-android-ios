@@ -1,6 +1,18 @@
+import {
+  CreditCardExtractionRequest,
+  ExtractionResponse,
+  ScandocAuthRequest,
+  ScandocAuthResponse,
+  ValidationRequest,
+  ValidationResponse,
+} from './types';
+
+export * from './types';
+
 export const SCANDOC_KS_BASE_URL = 'https://api.scandoc.ai/ks';
 export const SCANDOC_SCAN_BASE_URL = 'https://monri-scandoc.asseco-see.hr';
-export const SCANDOC_VALIDATION_BASE_URL = 'https://shadowfax.zemris.fer.hr';
+export const SCANDOC_VALIDATION_BASE_URL =
+  'https://monri-scandoc.asseco-see.hr';
 
 type FetchJsonOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -36,13 +48,6 @@ export async function fetchJson<T>(
   return (await response.json()) as T;
 }
 
-export type ScandocAuthResponse = Record<string, unknown>;
-
-export type ScandocAuthRequest = {
-  user_key: string;
-  sub_client?: string;
-};
-
 export function authenticateScandoc(
   creds: ScandocAuthRequest
 ): Promise<ScandocAuthResponse> {
@@ -74,47 +79,6 @@ export function refreshScandocAuth(
   );
 }
 
-export type CreditCardExtractionRequest = {
-  DataFields: {
-    Image: string;
-    ImageType: 'base64';
-    ImageCropped: boolean;
-  };
-  Settings: {
-    ShouldReturnDocumentImage: boolean;
-    SkipDocumentSizeCheck: boolean;
-    SkipImageSizeCheck: boolean;
-    CanStoreImages: boolean;
-    DontUseValidation: boolean;
-  };
-  AcceptTermsAndConditions: boolean;
-};
-
-export type ExtractionDataField<T = string> = {
-  Read: boolean;
-  Value: T;
-};
-
-export type ExtractionResponse = {
-  TransactionID: string;
-  UploadedAt: string;
-  ProductName: string;
-  Errors: string[];
-  Warnings: string[];
-  Status: number;
-  Method: string;
-  InfoCode: number;
-  Data: {
-    CardNumber?: ExtractionDataField;
-    ExpiryDate?: ExtractionDataField;
-    [key: string]: ExtractionDataField | undefined;
-  };
-  ImageData?: {
-    CreditCardImage?: string;
-  };
-  AnalysisTime: string;
-};
-
 export function extractCreditCardData(
   payload: CreditCardExtractionRequest,
   token: string
@@ -130,41 +94,19 @@ export function extractCreditCardData(
   );
 }
 
-export type ValidationRequest = {
-  AcceptTermsAndConditions: boolean;
-  Settings: {
-    SkipImageSizeCheck: boolean;
-  };
-  DataFields?: {
-    Image: string;
-    ImageType: 'base64';
-    ImageCropped: boolean;
-  };
-};
-
-export type ValidationResponse = {
-  TransactionID: string;
-  UploadedAt: string;
-  ProductName: string;
-  Errors: string[];
-  Warnings: string[];
-  Status: number;
-  Method: 'Validation';
-  InfoCode: number;
-  Keypoints?: [number, number][];
-  DetectedBlurValue?: number;
-  Validated: boolean;
-  Index?: number;
-  AnalysisTime: string;
-};
-
 export function validateCreditCardImage(
-  payload: ValidationRequest
+  payload: ValidationRequest,
+  token?: string
 ): Promise<ValidationResponse> {
+  console.warn(
+    'validateCreditCardImage called. First image length approx:',
+    payload.DataFields?.Images?.[0]?.length ?? 'no image'
+  );
   return fetchJson<ValidationResponse>(
     '/validation/',
     {
       method: 'POST',
+      headers: token ? { Authorization: `${token}` } : undefined,
       body: payload,
     },
     SCANDOC_VALIDATION_BASE_URL

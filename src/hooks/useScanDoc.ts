@@ -5,6 +5,8 @@ import {
   CreditCardExtractionRequest,
   ScandocAuthRequest,
   ExtractionResponse,
+  validateCreditCardImage,
+  type ValidationRequest,
 } from '../api';
 import { useAuth } from './useAuth';
 
@@ -51,6 +53,23 @@ export function useScanDoc() {
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const getValidToken = useCallback(
+    async (authCreds: ScandocAuthRequest): Promise<string> => {
+      // For testing, you can hardcode a valid token here to skip auth flow. The token expires after some time, so you may need to update it periodically.
+      // const HARDCODED_TOKEN =
+      //   'your_hardcoded_token_here';
+      // if (HARDCODED_TOKEN) return HARDCODED_TOKEN;
+
+      if (token) return token;
+      const authRes = await authenticate(authCreds);
+      const accessToken =
+        (authRes as any)?.access_token ?? (authRes as any)?.token;
+      if (!accessToken) throw new Error('No access token received from auth');
+      return accessToken;
+    },
+    [token, authenticate]
+  );
+
   const extract = useCallback(
     async (
       payload: CreditCardExtractionRequest,
@@ -59,20 +78,8 @@ export function useScanDoc() {
       setIsLoading(true);
       setError(null);
 
-      const getValidToken = async (): Promise<string> => {
-        const HARDCODED_TOKEN =
-          'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJDbGllbnRJZCI6NTcsIlN1YkNsaWVudElkIjo1MjYsIlRpbWUiOiIyMDI2LTAxLTMwVDE0OjE0OjU0LjQxMTEyMiJ9.GD16ITyXeNHAGtZQ35jzTCyl-WNz5gqtYA76JU6-gChQia7VSXDejyr5J52VzoU1CuR2fIIZxU3rSfvzPVFEkw';
-        if (HARDCODED_TOKEN) return HARDCODED_TOKEN;
-
-        if (token) return token;
-        const authRes = await authenticate(authCreds);
-        const t = (authRes as any)?.access_token ?? (authRes as any)?.token;
-        if (!t) throw new Error('No access token received from auth');
-        return t;
-      };
-
       try {
-        const currentToken = await getValidToken();
+        const currentToken = await getValidToken(authCreds);
 
         try {
           const result = await extractCreditCardData(payload, currentToken);
@@ -123,8 +130,52 @@ export function useScanDoc() {
         setIsLoading(false);
       }
     },
-    [token, refreshToken, authenticate, refresh]
+    [getValidToken, refreshToken, authenticate, refresh]
   );
 
-  return { extract, data, error, isLoading };
+  const validate = useCallback(
+    async (payload: ValidationRequest, authCreds: ScandocAuthRequest) => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const currentToken = await getValidToken(authCreds);
+
+        try {
+          const result = await validateCreditCardImage(payload, currentToken);
+          return result;
+        } catch (e) {
+          const status = (e as Error & { status?: number }).status;
+
+          if (status === 401) {
+            if (refreshToken) {
+              const refreshRes = await refresh();
+              const newToken =
+                (refreshRes as any)?.access_token ?? (refreshRes as any)?.token;
+              if (newToken) {
+                return await validateCreditCardImage(payload, newToken);
+              }
+            }
+
+            const reAuthRes = await authenticate(authCreds);
+            const reToken =
+              (reAuthRes as any)?.access_token ?? (reAuthRes as any)?.token;
+            if (reToken) {
+              return await validateCreditCardImage(payload, reToken);
+            }
+          }
+          throw e;
+        }
+      } catch (e) {
+        const err = e instanceof Error ? e : new Error(String(e));
+        setError(err);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [getValidToken, refreshToken, authenticate, refresh]
+  );
+
+  return { extract, validate, data, error, isLoading };
 }
