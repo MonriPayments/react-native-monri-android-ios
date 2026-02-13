@@ -73,3 +73,10 @@ export type ValidationResponse = {
   Index?: number;
   AnalysisTime: string;
 };
+
+export type ScandocCardDetails = {
+  pan: string;
+  expiryMonth: number;
+  expiryYear: number;
+  holderName?: string;
+};

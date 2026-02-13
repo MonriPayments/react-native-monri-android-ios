@@ -20,6 +20,7 @@ type VisionCameraViewProps = {
   showControls?: boolean;
   feedbackText?: string;
   showFeedback?: boolean;
+  mode?: 'validation' | 'extraction'; // Add mode prop
 };
 
 const VisionCameraView: React.FC<VisionCameraViewProps> = ({
@@ -31,6 +32,7 @@ const VisionCameraView: React.FC<VisionCameraViewProps> = ({
   showControls = true,
   feedbackText = '',
   showFeedback = true,
+  mode = 'extraction', // Default to extraction
 }) => {
   const cameraRef = useRef<Camera | null>(null);
   const device = useCameraDevice('back');
@@ -57,35 +59,47 @@ const VisionCameraView: React.FC<VisionCameraViewProps> = ({
         ? photo.path
         : `file://${photo.path}`;
 
-      // Resize the image before reading base64 to avoid OOM crashes.
-      // Target max dimension 1024px, JPEG at 50% quality keeps it well under 1 MB.
-      const resized = await ImageResizer.createResizedImage(
-        originalUri,
-        1024, // max width
-        1024, // max height
-        'JPEG',
-        50, // quality 0-100
-        0, // rotation
-        undefined, // outputPath (temp)
-        false, // keepMeta
-        { mode: 'contain', onlyScaleDown: true }
-      );
+      let finalUri: string;
+      let base64: string;
 
-      const resizedPath = resized.uri.startsWith('file://')
-        ? resized.uri.replace('file://', '')
-        : resized.path;
-      const base64 = await RNFS.readFile(resizedPath, 'base64');
+      // Only resize for validation mode, skip for extraction
+      if (mode === 'validation') {
+        // Resize the image before reading base64 to avoid OOM crashes.
+        // Target max dimension 1024px, JPEG at 50% quality keeps it well under 1 MB.
+        const resized = await ImageResizer.createResizedImage(
+          originalUri,
+          1024, // max width
+          1024, // max height
+          'JPEG',
+          50, // quality 0-100
+          0, // rotation
+          undefined, // outputPath (temp)
+          false, // keepMeta
+          { mode: 'contain', onlyScaleDown: true }
+        );
 
-      // Clean up the temp resized file
-      RNFS.unlink(resizedPath).catch(() => {});
+        const resizedPath = resized.uri.startsWith('file://')
+          ? resized.uri.replace('file://', '')
+          : resized.path;
+        base64 = await RNFS.readFile(resizedPath, 'base64');
 
-      await onCapture({ uri: resized.uri, base64 });
+        // Clean up the temp resized file
+        RNFS.unlink(resizedPath).catch(() => {});
+        finalUri = resized.uri;
+      } else {
+        // For extraction mode, use original full-resolution image
+        const originalPath = originalUri.replace('file://', '');
+        base64 = await RNFS.readFile(originalPath, 'base64');
+        finalUri = originalUri;
+      }
+
+      await onCapture({ uri: finalUri, base64 });
     } catch (err) {
       console.error('Capture failed inside VisionCameraView:', err);
     } finally {
       setIsCapturing(false);
     }
-  }, [isCapturing, onCapture]);
+  }, [isCapturing, onCapture, mode]);
 
   useEffect(() => {
     if (!autoCapture || !hasPermission || !device) return;

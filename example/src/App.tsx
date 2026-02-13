@@ -14,9 +14,7 @@ import sha512 from 'crypto-js/sha512';
 import VisionCameraView from './components/VisionCameraView';
 import { useScanDoc } from '../../src/hooks/useScanDoc';
 import {
-  type CreditCardExtractionRequest,
   type ScandocAuthRequest,
-  type ValidationRequest,
   type ValidationResponse,
 } from '../../src/api';
 
@@ -47,8 +45,11 @@ export default function App() {
 
   const { extract, validate, isLoading, error, data } = useScanDoc();
 
-  const scandocUserKey = 'your_user_key_here';
+  const scandocUserKey = 'XCbnR54PAHma8hyBiP7J93xgzAHzAI';
   const scandocSubClient = 'react-native-monri-android-ios';
+
+  const SCANDOC_SCAN_BASE_URL = 'https://monri-scandoc.asseco-see.hr';
+  const SCANDOC_VALIDATION_BASE_URL = 'https://monri-scandoc.asseco-see.hr';
 
   const key = 'your_key_here';
   const authenticityToken = 'your_authenticity_token_here';
@@ -209,6 +210,7 @@ export default function App() {
     return (
       <VisionCameraView
         step="front"
+        mode={mode}
         autoCapture={mode === 'validation'}
         autoCaptureDelayMs={500}
         showControls={mode !== 'validation'}
@@ -227,23 +229,12 @@ export default function App() {
             };
 
             if (mode === 'validation') {
-              const validationPayload: ValidationRequest = {
-                AcceptTermsAndConditions: true,
-                Settings: {
-                  SkipImageSizeCheck: true,
-                },
-                DataFields: {
-                  Images: [cleanedImage],
-                  ImageType: 'base64',
-                  ImageCropped: false,
-                },
-              };
-
               setIsValidating(true);
               console.warn('Calling validate()...');
 
               const validationResult = await validate(
-                validationPayload,
+                SCANDOC_VALIDATION_BASE_URL,
+                cleanedImage,
                 authCreds
               );
 
@@ -266,23 +257,11 @@ export default function App() {
               return;
             }
 
-            const scanPayload: CreditCardExtractionRequest = {
-              DataFields: {
-                Image: cleanedImage,
-                ImageType: 'base64',
-                ImageCropped: false,
-              },
-              Settings: {
-                ShouldReturnDocumentImage: false,
-                SkipDocumentSizeCheck: true,
-                SkipImageSizeCheck: true,
-                CanStoreImages: false,
-                DontUseValidation: false,
-              },
-              AcceptTermsAndConditions: true,
-            };
-
-            const scanResult = await extract(scanPayload, authCreds);
+            const scanResult = await extract(
+              SCANDOC_SCAN_BASE_URL,
+              cleanedImage,
+              authCreds
+            );
             setResult(`Scan success: ${JSON.stringify(scanResult)}`);
             setShowCamera(false);
           } catch (e) {
