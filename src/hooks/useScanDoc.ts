@@ -18,14 +18,14 @@ export function useScanDoc() {
   const [isLoading, setIsLoading] = useState(false);
 
   const getValidToken = useCallback(
-    async (authCreds: ScandocAuthRequest, baseUrl: string): Promise<string> => {
+    async (authCreds: ScandocAuthRequest): Promise<string> => {
       // For testing, you can hardcode a valid token here to skip auth flow. The token expires after some time, so you may need to update it periodically.
       const HARDCODED_TOKEN =
         'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJDbGllbnRJZCI6NTcsIlN1YkNsaWVudElkIjo1MjYsIlRpbWUiOiIyMDI2LTAyLTEyVDEyOjUwOjI5LjQwMjQwNSJ9.qF6faka4kZn5D4kn2RF5gs4EmaGDV6FT7cbfr_Rc6yj3GL0vVB3DWui6uqmU9Fm4Ea-OOzR74aHcTR1nzV802Q';
       if (HARDCODED_TOKEN) return HARDCODED_TOKEN;
 
       if (token) return token;
-      const authRes = await authenticate(baseUrl, authCreds);
+      const authRes = await authenticate(authCreds);
       const accessToken =
         (authRes as any)?.access_token ?? (authRes as any)?.token;
       if (!accessToken) throw new Error('No access token received from auth');
@@ -88,7 +88,7 @@ export function useScanDoc() {
       setError(null);
 
       try {
-        const currentToken = await getValidToken(authCreds, baseUrl);
+        const currentToken = await getValidToken(authCreds);
 
         const payload = ExtractPayloadBuilder(
           imageBase64,
@@ -114,7 +114,7 @@ export function useScanDoc() {
 
           if (status === 401) {
             if (refreshToken) {
-              const refreshRes = await refresh(baseUrl);
+              const refreshRes = await refresh();
               const newToken =
                 (refreshRes as any)?.access_token ?? (refreshRes as any)?.token;
               if (newToken) {
@@ -129,7 +129,7 @@ export function useScanDoc() {
               }
             }
 
-            const reAuthRes = await authenticate(baseUrl, authCreds);
+            const reAuthRes = await authenticate(authCreds);
             const reToken =
               (reAuthRes as any)?.access_token ?? (reAuthRes as any)?.token;
             if (reToken) {
@@ -168,7 +168,7 @@ export function useScanDoc() {
       setError(null);
 
       try {
-        const currentToken = await getValidToken(authCreds, baseUrl);
+        const currentToken = await getValidToken(authCreds);
         const payload = ValidationPayloadBuilder(
           imageBase64,
           settings,
@@ -187,7 +187,7 @@ export function useScanDoc() {
 
           if (status === 401) {
             if (refreshToken) {
-              const refreshRes = await refresh(baseUrl);
+              const refreshRes = await refresh();
               const newToken =
                 (refreshRes as any)?.access_token ?? (refreshRes as any)?.token;
               if (newToken) {
@@ -199,7 +199,7 @@ export function useScanDoc() {
               }
             }
 
-            const reAuthRes = await authenticate(baseUrl, authCreds);
+            const reAuthRes = await authenticate(authCreds);
             const reToken =
               (reAuthRes as any)?.access_token ?? (reAuthRes as any)?.token;
             if (reToken) {

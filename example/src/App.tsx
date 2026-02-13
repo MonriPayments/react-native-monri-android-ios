@@ -45,11 +45,10 @@ export default function App() {
 
   const { extract, validate, isLoading, error, data } = useScanDoc();
 
-  const scandocUserKey = 'XCbnR54PAHma8hyBiP7J93xgzAHzAI';
+  const scandocUserKey = 'your_scandoc_user_key_here';
   const scandocSubClient = 'react-native-monri-android-ios';
 
-  const SCANDOC_SCAN_BASE_URL = 'https://monri-scandoc.asseco-see.hr';
-  const SCANDOC_VALIDATION_BASE_URL = 'https://monri-scandoc.asseco-see.hr';
+  const SCANDOC_BASE_URL = 'https://monri-scandoc.asseco-see.hr';
 
   const key = 'your_key_here';
   const authenticityToken = 'your_authenticity_token_here';
@@ -233,7 +232,7 @@ export default function App() {
               console.warn('Calling validate()...');
 
               const validationResult = await validate(
-                SCANDOC_VALIDATION_BASE_URL,
+                SCANDOC_BASE_URL,
                 cleanedImage,
                 authCreds
               );
@@ -258,7 +257,7 @@ export default function App() {
             }
 
             const scanResult = await extract(
-              SCANDOC_SCAN_BASE_URL,
+              SCANDOC_BASE_URL,
               cleanedImage,
               authCreds
             );
