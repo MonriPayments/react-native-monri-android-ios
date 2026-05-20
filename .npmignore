@@ -1,0 +1,29 @@
+# Android build artifacts & IDE
+android/.gradle/
+android/.idea/
+android/.settings/
+android/.kotlin/
+android/.project
+android/build/
+android/local.properties
+android/*.iml
+android/*.hprof
+android/.cxx/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+
+# iOS user state
+ios/**/xcuserdata/
+ios/build/
+ios/Pods/
+
+# Example app
+example/
+
+# Misc
+.github/
+.vscode/
+.idea/
+*.log
+.DS_Store
