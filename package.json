@@ -1,6 +1,6 @@
 {
   "name": "react-native-monri-android-ios",
-  "version": "0.4.0",
+  "version": "2.1.1",
   "description": "React Native bridge for Monri Android/iOS SDK",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
@@ -9,13 +9,15 @@
   "files": [
     "src",
     "lib",
-    "android",
-    "ios",
+    "android/src",
+    "android/build.gradle",
+    "android/gradle.properties",
+    "ios/*.h",
+    "ios/*.m",
+    "ios/*.swift",
     "cpp",
     "react-native-monri-android-ios.podspec",
     "!lib/typescript/example",
-    "!android/build",
-    "!ios/build",
     "!**/__tests__",
     "!**/__fixtures__",
     "!**/__mocks__"
