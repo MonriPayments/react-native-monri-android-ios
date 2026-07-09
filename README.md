@@ -38,6 +38,12 @@ const result = await MonriAndroidIos.confirmPayment({
       fullName: 'Test Test',
       zip: '71210',
     },
+    // optional 3DS browser info — omitted fields (or the whole object)
+    // are resolved automatically by the native SDK
+    browserInfo: {
+      language: 'en',
+      timeZoneOffset: -60,
+    },
   });
 ```
 

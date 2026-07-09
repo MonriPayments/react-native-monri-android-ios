@@ -67,12 +67,31 @@ export type SavedCard = {
   cvv: string;
 };
 
+/**
+ * 3DS browser (device) info sent with confirmPayment.
+ * All fields are optional — any field not provided is
+ * resolved automatically by the native SDK.
+ */
+export type BrowserInfo = {
+  screenWidth?: number;
+  screenHeight?: number;
+  colorDepth?: number;
+  userAgent?: string;
+  timeZoneOffset?: number;
+  language?: string;
+  javaEnabled?: boolean;
+  httpAccept?: string;
+  httpUserAgent?: string;
+  httpAcceptLanguage?: string;
+};
+
 export type ConfirmPaymentParams = {
   type: string;
   clientSecret: string;
   card?: Card;
   savedCard?: SavedCard;
   transaction: Transaction;
+  browserInfo?: BrowserInfo;
   googlePayButtonOptions?: GooglePayButtonOptions;
   pkPaymentButtonType?: number | null;
   pkPaymentButtonStyle?: number | null;
