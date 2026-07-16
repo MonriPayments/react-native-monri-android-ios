@@ -167,7 +167,38 @@ class MonriAndroidIos: NSObject {
             .set(customerParams: customerParams)
             .set("order_info", transactionParams["orderInfo"] as? String)
 
+        if let browserInfo = parseBrowserInfo(params) {
+            return ConfirmPaymentParams(
+                paymentId: clientSecret,
+                paymentMethod: paymentMethod,
+                transaction: transaction,
+                browserInfo: browserInfo
+            )
+        }
+
         return ConfirmPaymentParams(paymentId: clientSecret, paymentMethod: paymentMethod, transaction: transaction)
+    }
+
+    private func parseBrowserInfo(_ params: [String: Any]) -> BrowserInfo? {
+        guard let browserInfoParams = params["browserInfo"] as? [String: Any] else {
+            return nil
+        }
+
+        // Fields not provided from JS keep the SDK-resolved defaults
+        let defaults = BrowserInfo.create().toJSON()
+
+        return BrowserInfo(
+            screenWidth: browserInfoParams["screenWidth"] as? Int ?? defaults["screen_width"] as? Int ?? 0,
+            screenHeight: browserInfoParams["screenHeight"] as? Int ?? defaults["screen_height"] as? Int ?? 0,
+            colorDepth: browserInfoParams["colorDepth"] as? Int ?? defaults["color_depth"] as? Int ?? 24,
+            userAgent: browserInfoParams["userAgent"] as? String ?? defaults["user_agent"] as? String ?? "",
+            timeZoneOffset: browserInfoParams["timeZoneOffset"] as? Int ?? defaults["time_zone_offset"] as? Int ?? 0,
+            language: browserInfoParams["language"] as? String ?? defaults["language"] as? String ?? "",
+            javaEnabled: browserInfoParams["javaEnabled"] as? Bool ?? defaults["java_enabled"] as? Bool ?? false,
+            httpAccept: browserInfoParams["httpAccept"] as? String ?? defaults["http_accept"] as? String ?? "*/*",
+            httpUserAgent: browserInfoParams["httpUserAgent"] as? String ?? defaults["http_user_agent"] as? String ?? "",
+            httpAcceptLanguage: browserInfoParams["httpAcceptLanguage"] as? String ?? defaults["http_accept_language"] as? String ?? ""
+        )
     }
 
     private func writeMetaData() {

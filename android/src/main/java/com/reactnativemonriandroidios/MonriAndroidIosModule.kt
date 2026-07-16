@@ -66,7 +66,7 @@ class MonriAndroidIosModule(
 
       this.confirmPaymentPromise = promise
 
-      val parseResult = MonriMapper.parseConfirmPaymentParams(params)
+      val parseResult = MonriMapper.parseConfirmPaymentParams(reactApplicationContext, params)
       val confirmPaymentParams = parseResult.params
       this.googlePayButtonOptions = parseResult.googlePayButtonOptions
 
@@ -85,7 +85,7 @@ class MonriAndroidIosModule(
           }
         }
 
-      if (MonriMapper.parseConfirmPaymentParams(params).googlePayButtonOptions != null) {
+      if (parseResult.googlePayButtonOptions != null) {
          if (this.googlePayButtonOptions != null) {
              this.monri.confirmPayment(
                  confirmPaymentParams,

@@ -1,5 +1,6 @@
 package com.reactnativemonriandroidios
 
+import android.content.Context
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeArray
@@ -14,7 +15,7 @@ object MonriMapper {
         val googlePayButtonOptions: GooglePayButtonOptions?
     )
 
-    fun parseConfirmPaymentParams(params: ReadableMap): ConfirmPaymentParseResult {
+    fun parseConfirmPaymentParams(context: Context, params: ReadableMap): ConfirmPaymentParseResult {
         val clientSecret = getRequiredString(params, MonriConstants.KEY_CLIENT_SECRET)
         val transactionParams = params.getMap(MonriConstants.KEY_TRANSACTION)
             ?: throw RequiredAttributeException(MonriConstants.ERROR_TRANSACTION_MISSING)
@@ -93,7 +94,51 @@ object MonriMapper {
                 .set(MonriConstants.KEY_ORDER_INFO, transactionParams.getString(MonriConstants.KEY_ORDER_INFO))
         )
 
+        if (params.hasKey(MonriConstants.KEY_BROWSER_INFO)) {
+            params.getMap(MonriConstants.KEY_BROWSER_INFO)?.let { browserInfoParams ->
+                confirmPaymentParams.setBrowserInfo(parseBrowserInfo(context, browserInfoParams))
+            }
+        }
+
         return ConfirmPaymentParseResult(confirmPaymentParams, googlePayButtonOptions)
+    }
+
+    private fun parseBrowserInfo(context: Context, params: ReadableMap): BrowserInfo {
+        // Fields not provided from JS keep the SDK-resolved defaults
+        val browserInfo = BrowserInfo.create(context)
+
+        if (params.hasKey(MonriConstants.KEY_SCREEN_WIDTH)) {
+            browserInfo.setScreenWidth(params.getInt(MonriConstants.KEY_SCREEN_WIDTH))
+        }
+        if (params.hasKey(MonriConstants.KEY_SCREEN_HEIGHT)) {
+            browserInfo.setScreenHeight(params.getInt(MonriConstants.KEY_SCREEN_HEIGHT))
+        }
+        if (params.hasKey(MonriConstants.KEY_COLOR_DEPTH)) {
+            browserInfo.setColorDepth(params.getInt(MonriConstants.KEY_COLOR_DEPTH))
+        }
+        getNullableString(params, MonriConstants.KEY_USER_AGENT)?.let {
+            browserInfo.setUserAgent(it)
+        }
+        if (params.hasKey(MonriConstants.KEY_TIME_ZONE_OFFSET)) {
+            browserInfo.setTimeZoneOffset(params.getInt(MonriConstants.KEY_TIME_ZONE_OFFSET))
+        }
+        getNullableString(params, MonriConstants.KEY_LANGUAGE)?.let {
+            browserInfo.setLanguage(it)
+        }
+        if (params.hasKey(MonriConstants.KEY_JAVA_ENABLED)) {
+            browserInfo.setJavaEnabled(params.getBoolean(MonriConstants.KEY_JAVA_ENABLED))
+        }
+        getNullableString(params, MonriConstants.KEY_HTTP_ACCEPT)?.let {
+            browserInfo.setHttpAccept(it)
+        }
+        getNullableString(params, MonriConstants.KEY_HTTP_USER_AGENT)?.let {
+            browserInfo.setHttpUserAgent(it)
+        }
+        getNullableString(params, MonriConstants.KEY_HTTP_ACCEPT_LANGUAGE)?.let {
+            browserInfo.setHttpAcceptLanguage(it)
+        }
+
+        return browserInfo
     }
 
     fun parseMonriApiOptions(params: ReadableMap): MonriApiOptions {

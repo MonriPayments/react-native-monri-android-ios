@@ -42,6 +42,19 @@ object MonriConstants {
     const val KEY_ORDER_INFO = "orderInfo"
     const val KEY_AUTHENTICITY_TOKEN = "authenticityToken"
     const val KEY_DEVELOPMENT_MODE = "developmentMode"
+
+    // Browser Info Keys
+    const val KEY_BROWSER_INFO = "browserInfo"
+    const val KEY_SCREEN_WIDTH = "screenWidth"
+    const val KEY_SCREEN_HEIGHT = "screenHeight"
+    const val KEY_COLOR_DEPTH = "colorDepth"
+    const val KEY_USER_AGENT = "userAgent"
+    const val KEY_TIME_ZONE_OFFSET = "timeZoneOffset"
+    const val KEY_LANGUAGE = "language"
+    const val KEY_JAVA_ENABLED = "javaEnabled"
+    const val KEY_HTTP_ACCEPT = "httpAccept"
+    const val KEY_HTTP_USER_AGENT = "httpUserAgent"
+    const val KEY_HTTP_ACCEPT_LANGUAGE = "httpAcceptLanguage"
     
     // Payment Types
     const val TYPE_GOOGLE_PAY = "googlePay"
