@@ -43,15 +43,28 @@ export default function App() {
       body: bodyAsString,
     });
 
+    const raw = await response.text();
+    let json;
     try {
-      const json = await response.json();
-      if (!json.client_secret) {
-        throw new Error('Server response missing client_secret.');
-      }
-      return json.client_secret as string;
+      json = JSON.parse(raw);
     } catch {
-      throw new Error('Server returned non-JSON response.');
+      throw new Error(
+        `Server returned non-JSON response (HTTP ${
+          response.status
+        }): ${raw.slice(0, 200)}`
+      );
     }
+    if (!response.ok) {
+      throw new Error(
+        `Payment session failed (HTTP ${response.status}): ${
+          json.message ?? raw
+        }`
+      );
+    }
+    if (!json.client_secret) {
+      throw new Error('Server response missing client_secret.');
+    }
+    return json.client_secret as string;
   }, [authenticityToken, key]);
 
   async function payWithGooglePay() {
